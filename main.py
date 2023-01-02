@@ -1,10 +1,11 @@
 import medmnist
 import torch
+from matplotlib import pyplot as plt
 from medmnist import INFO, Evaluator
 
 import monai
-from torch import Tensor
-from torch import utils
+from monai.transforms import Compose, RandRotate90, ScaleIntensity
+from torch import Tensor, randint
 from tqdm import tqdm
 
 BATCH_SIZE = 32
@@ -18,8 +19,24 @@ info = INFO[dataset_name]
 num_classes = len(info["label"])
 DataClass = getattr(medmnist, info['python_class'])
 
-train_dataset = DataClass(split='train',  download=download)
+train_dataset = DataClass(split='train',  download=download, transform=Compose([ScaleIntensity(), RandRotate90()]))
+val_dataset = DataClass(split='val', download=download, transform=Compose([ScaleIntensity()]))
+test_dataset = DataClass(split='test', download=download, transform=Compose([ScaleIntensity()]))
 train_loader = monai.data.DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+val_loader = monai.data.DataLoader(dataset=val_dataset, batch_size=BATCH_SIZE, shuffle=False)
+test_loader = monai.data.DataLoader(dataset=test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+
+rows, cols = 5, 5
+stride = 5
+image, label = train_dataset[randint(0, len(train_dataset) - 1, [1])]
+plt.figure("image", (7, 7))
+print(f"label: {label[0]}")
+for row in range(rows):
+	for col in range(cols):
+		plt.subplot(rows, cols, row * cols + col + 1)
+		plt.imshow(image[0][row * cols + col], cmap="gray")
+		plt.axis("off")
+plt.show()
 
 
 model = torch.nn.Sequential(
@@ -37,9 +54,11 @@ for epoch in range(NUM_EPOCHS):
 	model.train()
 	for inputs, targets in tqdm(train_loader):
 		# forward + backward + optimize
+		inputs: Tensor = inputs.to(device, dtype=torch.float32)
+		targets: Tensor = targets.to(device, dtype=torch.float32)
+
 		optimizer.zero_grad()
-		tep: Tensor = inputs.to(device, dtype=torch.float32)
-		outputs: Tensor = model(tep)
+		outputs: Tensor = model(inputs)
 
 		targets = targets.to(device, torch.float32)
 		loss = loss_function(outputs, targets)
