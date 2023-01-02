@@ -4,6 +4,11 @@
 
 `pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu116`
 
+## Run Jupyter notebook on HPC
+
+- run on HPC `jupyter notebook --no-browser --port=40000 --ip=$HOSTNAME`
+- run on local computer `ssh -i path/to/sshkey USERNAME@l1.hpc.dtu.dk -g -L8080:HOSTNAME:PORT -N`
+
 ## Problem description
 
 ## Initial plan
