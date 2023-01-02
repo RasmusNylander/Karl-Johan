@@ -1,3 +1,5 @@
+from math import sqrt, ceil
+
 import medmnist
 import torch
 from matplotlib import pyplot as plt
@@ -7,6 +9,25 @@ import monai
 from monai.transforms import Compose, RandRotate90, ScaleIntensity
 from torch import Tensor, randint
 from tqdm import tqdm
+
+def plot_image(image: Tensor):
+	num_slices = image.shape[0]
+	rows = ceil(sqrt(num_slices))
+	cols = ceil(num_slices / rows)
+
+	image_width = cols * (image.shape[2] + 1) / 100
+	image_height = rows * (image.shape[1] + 1) / 100
+
+	plt.figure("image", (image_width, image_height))
+	for row in range(rows):
+		for col in range(cols):
+			if row * cols + col >= num_slices:
+				plt.show()
+				return
+			plt.subplot(rows, cols, row * cols + col + 1)
+			plt.imshow(image[row * cols + col], cmap="gray")
+			plt.axis("off")
+	plt.show()
 
 BATCH_SIZE = 32
 NUM_EPOCHS = 5
@@ -26,17 +47,8 @@ train_loader = monai.data.DataLoader(dataset=train_dataset, batch_size=BATCH_SIZ
 val_loader = monai.data.DataLoader(dataset=val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 test_loader = monai.data.DataLoader(dataset=test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-rows, cols = 5, 5
-stride = 5
-image, label = train_dataset[randint(0, len(train_dataset) - 1, [1])]
-plt.figure("image", (7, 7))
-print(f"label: {label[0]}")
-for row in range(rows):
-	for col in range(cols):
-		plt.subplot(rows, cols, row * cols + col + 1)
-		plt.imshow(image[0][row * cols + col], cmap="gray")
-		plt.axis("off")
-plt.show()
+random_image = train_dataset[randint(0, len(train_dataset) - 1, [1])][0][0]
+plot_image(random_image)
 
 
 model = torch.nn.Sequential(
