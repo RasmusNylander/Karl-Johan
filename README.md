@@ -25,6 +25,6 @@
 
 ## Questions for superviser meeting:
 - Is hand-in only a slide deck with comments, and how elaborate should the comments be?
-- Since there is only 5000 images, should we do some image augmentation, and which methods would be a good idea, rotating, scaling, bluring?
+- Since there is only 500 images, should we do some image augmentation, and which methods would be a good idea, rotating, scaling, bluring?
  
    
