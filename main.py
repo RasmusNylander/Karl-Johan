@@ -21,8 +21,8 @@ def plot_image(image: Tensor):
 	rows = ceil(sqrt(num_slices))
 	cols = ceil(num_slices / rows)
 
-	image_width = cols * (image.shape[2] + 1) / 100
-	image_height = rows * (image.shape[1] + 1) / 100
+	image_width = cols * (image.shape[2] + 2) // 100
+	image_height = rows * (image.shape[1] + 2) // 100
 
 	plt.figure("image", (image_width, image_height))
 	for row in range(rows):
@@ -61,12 +61,12 @@ def test(model, dataloader: DataLoader) -> TestResult:
 		return TestResult(loss.mean().item(), accuracy_score.mean().item())
 
 
-def train_one_epoch(model, train_loader: DataLoader, validation_loader: DataLoader) -> tuple[TestResult, TestResult]:
+def train_one_epoch(model, dataloader: DataLoader) -> TestResult:
 	model.train()
-	num_training_batches = len(train_loader)
+	num_training_batches = len(dataloader)
 	train_loss: Tensor = torch.empty(num_training_batches, device=device)
 	train_accuracy: Tensor = torch.empty(num_training_batches, device=device)
-	for batch_index, (inputs, targets) in enumerate(train_loader):
+	for batch_index, (inputs, targets) in enumerate(dataloader):
 		# forward + backward + optimize
 		inputs: Tensor = inputs.to(device, dtype=torch.float32)
 		targets: Tensor = targets.to(device, dtype=torch.float32)
@@ -83,8 +83,8 @@ def train_one_epoch(model, train_loader: DataLoader, validation_loader: DataLoad
 		optimizer.step()
 
 	train_result = TestResult(train_loss.mean().item(), train_accuracy.mean().item())
-	validation_result = test(model, validation_loader)
-	return train_result, validation_result
+
+	return train_result
 
 
 if __name__ == "__main__":
@@ -102,12 +102,13 @@ if __name__ == "__main__":
 	train_dataset = DataClass(split='train',  download=download, transform=Compose([ScaleIntensity(), RandRotate90()]))
 	val_dataset = DataClass(split='val', download=download, transform=Compose([ScaleIntensity()]))
 	test_dataset = DataClass(split='test', download=download, transform=Compose([ScaleIntensity()]))
-	train_loader = monai.data.DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=True)
-	val_loader = monai.data.DataLoader(dataset=val_dataset, batch_size=BATCH_SIZE, shuffle=False)
-	test_loader = monai.data.DataLoader(dataset=test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+	train_loader = monai.data.DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=True, pin_memory=True)
+	val_loader = monai.data.DataLoader(dataset=val_dataset, batch_size=BATCH_SIZE, shuffle=False, pin_memory=True)
+	test_loader = monai.data.DataLoader(dataset=test_dataset, batch_size=BATCH_SIZE, shuffle=False, pin_memory=True)
 
-	# random_image = train_dataset[randint(0, len(train_dataset) - 1, [1])][0][0]
-	# plot_image(random_image)
+	for i in range(3):
+		random_image = train_dataset[randint(0, len(train_dataset) - 1, [1])][0][0]
+		plot_image(random_image)
 
 	model = torch.nn.Sequential(
 		torch.nn.Dropout(0.1),
@@ -134,12 +135,12 @@ if __name__ == "__main__":
 	validation_accuracy: Tensor = torch.empty(NUM_EPOCHS, device=device)
 	with trange(NUM_EPOCHS, desc="Training", unit="Epoch") as progress_bar:
 		for epoch in progress_bar:
-			train_result, validation_result = train_one_epoch(model, train_loader, val_loader)
+			train_result = train_one_epoch(model, train_loader)
+			validation_result = test(model, val_loader)
 
-			train_loss[epoch] = train_result.loss
-			train_accuracy[epoch] = train_result.accuracy
-			validation_loss[epoch] = validation_result.loss
-			validation_accuracy[epoch] = validation_result.accuracy
+			train_loss[epoch], train_accuracy[epoch] = train_result.loss, train_result.accuracy
+			validation_loss[epoch], validation_accuracy[epoch] = validation_result.loss, validation_result.accuracy
+
 			if epoch % 10 == 0:
 				progress_bar.set_description(f"Epoch {epoch + 1} – Train Loss: {train_result.loss:.4f} - Validation Loss: {validation_result.loss:.4f}")
 
