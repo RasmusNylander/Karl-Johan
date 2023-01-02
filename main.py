@@ -61,7 +61,7 @@ def test(model, dataloader: DataLoader) -> TestResult:
 		return TestResult(loss.mean().item(), accuracy_score.mean().item())
 
 
-def train_one_epoch(model, train_loader: DataLoader, validation_loader: DataLoader) -> (float, float, float, float):
+def train_one_epoch(model, train_loader: DataLoader, validation_loader: DataLoader) -> tuple[TestResult, TestResult]:
 	model.train()
 	num_training_batches = len(train_loader)
 	train_loss: Tensor = torch.empty(num_training_batches, device=device)
@@ -82,8 +82,9 @@ def train_one_epoch(model, train_loader: DataLoader, validation_loader: DataLoad
 		loss.backward()
 		optimizer.step()
 
+	train_result = TestResult(train_loss.mean().item(), train_accuracy.mean().item())
 	validation_result = test(model, validation_loader)
-	return train_loss.mean().item(), train_accuracy.mean().item(), validation_result.loss, validation_result.accuracy
+	return train_result, validation_result
 
 
 if __name__ == "__main__":
@@ -128,7 +129,7 @@ if __name__ == "__main__":
 	loss_function = torch.nn.BCEWithLogitsLoss()
 
 	for epoch in tqdm(range(NUM_EPOCHS), desc="Training", unit="epoch"):
-		train_loss_mean, train_accuracy_mean, validation_loss_mean, validation_accuracy_mean = \
+		train_result, validation_result = \
 			train_one_epoch(model, train_loader, val_loader)
 		# print(f"Epoch {epoch + 1}/{NUM_EPOCHS} - Train loss: {train_loss_mean:.4f} - Train accuracy: {train_accuracy_mean:.4f} - Validation loss: {validation_loss_mean:.4f} - Validation accuracy: {validation_accuracy_mean:.4f}")
 
