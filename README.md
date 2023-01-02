@@ -13,9 +13,9 @@
   - Implement the same deep learning-based classification models for the insect dataset as used for the MedNIST
   - Implement one or more improved deep learning models for the insect dataset
   - Verify the data by applying network visualisation to insect model
-  
-  ## TODOs
-  - Create requirement file (soo all our envs are the same)
-  - Make sure all have acess to HPC and know how to use it
-  - Create a problem description
-  - 
+ 
+## TODOs
+- Create requirement file (soo all our envs are the same)
+- Make sure all have acess to HPC and know how to use it
+- Create a problem description
+   
