@@ -1,5 +1,9 @@
 # Karl-Johan 🍄
 
+## Install
+
+`pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu116`
+
 ## Problem description
 
 ## Initial plan
