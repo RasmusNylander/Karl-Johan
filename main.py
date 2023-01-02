@@ -86,3 +86,22 @@ for epoch in tqdm(range(NUM_EPOCHS), desc="Training", unit="epoch"):
 
 		loss.backward()
 		optimizer.step()
+
+	model.eval()
+	with torch.no_grad():
+		num_validation_batches: int = len(val_loader)
+		validation_loss: Tensor = torch.empty(num_validation_batches, device=device)
+		validation_accuracy: Tensor = torch.empty(num_validation_batches, device=device)
+		for batch_index, (inputs, targets) in enumerate(val_loader):
+			inputs: Tensor = inputs.to(device, dtype=torch.float32)
+			targets: Tensor = targets.to(device, dtype=torch.float32)
+
+			outputs: Tensor = model(inputs)
+
+			loss = loss_function(outputs, targets)
+
+			validation_loss[batch_index] = loss.item()
+			validation_accuracy[batch_index] = accuracy(outputs, targets)
+
+
+	print(f"Epoch {epoch + 1}/{NUM_EPOCHS} - Train loss: {train_loss.mean():.4f} - Train accuracy: {train_accuracy.mean():.4f} - Validation loss: {validation_loss.mean():.4f} - Validation accuracy: {validation_accuracy.mean():.4f}")
