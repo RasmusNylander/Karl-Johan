@@ -10,6 +10,11 @@ from monai.transforms import Compose, RandRotate90, ScaleIntensity
 from torch import Tensor, randint
 from tqdm import tqdm
 
+
+def accuracy(predictions: Tensor, labels: Tensor):
+	return (predictions == labels).sum().item() / labels.numel()
+
+
 def plot_image(image: Tensor):
 	num_slices = image.shape[0]
 	rows = ceil(sqrt(num_slices))
@@ -47,8 +52,8 @@ train_loader = monai.data.DataLoader(dataset=train_dataset, batch_size=BATCH_SIZ
 val_loader = monai.data.DataLoader(dataset=val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 test_loader = monai.data.DataLoader(dataset=test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-random_image = train_dataset[randint(0, len(train_dataset) - 1, [1])][0][0]
-plot_image(random_image)
+# random_image = train_dataset[randint(0, len(train_dataset) - 1, [1])][0][0]
+# plot_image(random_image)
 
 
 model = torch.nn.Sequential(
@@ -60,11 +65,12 @@ model = torch.nn.Sequential(
 optimizer = torch.optim.Adam(model.parameters(), 1e-3)
 loss_function = torch.nn.BCEWithLogitsLoss()
 
-model.train()
-
-for epoch in range(NUM_EPOCHS):
+for epoch in tqdm(range(NUM_EPOCHS), desc="Training", unit="epoch"):
 	model.train()
-	for inputs, targets in tqdm(train_loader):
+	num_training_batches = len(train_loader)
+	train_loss: Tensor = torch.empty(num_training_batches, device=device)
+	train_accuracy: Tensor = torch.empty(num_training_batches, device=device)
+	for batch_index, (inputs, targets) in enumerate(train_loader):
 		# forward + backward + optimize
 		inputs: Tensor = inputs.to(device, dtype=torch.float32)
 		targets: Tensor = targets.to(device, dtype=torch.float32)
@@ -74,6 +80,9 @@ for epoch in range(NUM_EPOCHS):
 
 		targets = targets.to(device, torch.float32)
 		loss = loss_function(outputs, targets)
+
+		train_loss[batch_index] = loss.item()
+		train_accuracy[batch_index] = accuracy(outputs, targets)
 
 		loss.backward()
 		optimizer.step()
