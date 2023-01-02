@@ -128,10 +128,24 @@ if __name__ == "__main__":
 	optimizer = torch.optim.Adam(model.parameters(), 1e-3)
 	loss_function = torch.nn.BCEWithLogitsLoss()
 
+	train_loss: Tensor = torch.empty(NUM_EPOCHS, device=device)
+	train_accuracy: Tensor = torch.empty(NUM_EPOCHS, device=device)
+	validation_loss: Tensor = torch.empty(NUM_EPOCHS, device=device)
+	validation_accuracy: Tensor = torch.empty(NUM_EPOCHS, device=device)
 	for epoch in tqdm(range(NUM_EPOCHS), desc="Training", unit="epoch"):
 		train_result, validation_result = \
 			train_one_epoch(model, train_loader, val_loader)
-		# print(f"Epoch {epoch + 1}/{NUM_EPOCHS} - Train loss: {train_loss_mean:.4f} - Train accuracy: {train_accuracy_mean:.4f} - Validation loss: {validation_loss_mean:.4f} - Validation accuracy: {validation_accuracy_mean:.4f}")
+		train_loss[epoch] = train_result.loss
+		train_accuracy[epoch] = train_result.accuracy
+		validation_loss[epoch] = validation_result.loss
+		validation_accuracy[epoch] = validation_result.accuracy
+
+	# plot the loss
+	plt.figure()
+	plt.plot(train_loss.cpu(), label="train loss")
+	plt.plot(validation_loss.cpu(), label="validation loss")
+	plt.legend()
+	plt.show()
 
 	test_result: TestResult = test(model, test_loader)
 	print(f"Test loss: {test_result.loss:.4f} - Test accuracy: {test_result.accuracy:.4f}")
