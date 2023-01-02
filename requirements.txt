@@ -3,3 +3,4 @@ medmnist
 torch
 torchvision
 pandas
+jupyterlab
