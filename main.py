@@ -9,7 +9,7 @@ import monai
 from monai.transforms import Compose, RandRotate90, ScaleIntensity
 from torch import Tensor, randint
 from torch.utils.data import DataLoader
-from tqdm import tqdm
+from tqdm import tqdm, trange
 
 
 def accuracy(predictions: Tensor, labels: Tensor):
@@ -89,7 +89,7 @@ def train_one_epoch(model, train_loader: DataLoader, validation_loader: DataLoad
 
 if __name__ == "__main__":
 	BATCH_SIZE = 32
-	NUM_EPOCHS = 10
+	NUM_EPOCHS = 100
 	device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 	dataset_name: str = "organmnist3d"
@@ -132,13 +132,16 @@ if __name__ == "__main__":
 	train_accuracy: Tensor = torch.empty(NUM_EPOCHS, device=device)
 	validation_loss: Tensor = torch.empty(NUM_EPOCHS, device=device)
 	validation_accuracy: Tensor = torch.empty(NUM_EPOCHS, device=device)
-	for epoch in tqdm(range(NUM_EPOCHS), desc="Training", unit="epoch"):
-		train_result, validation_result = \
-			train_one_epoch(model, train_loader, val_loader)
-		train_loss[epoch] = train_result.loss
-		train_accuracy[epoch] = train_result.accuracy
-		validation_loss[epoch] = validation_result.loss
-		validation_accuracy[epoch] = validation_result.accuracy
+	with trange(NUM_EPOCHS, desc="Training", unit="Epoch") as progress_bar:
+		for epoch in progress_bar:
+			train_result, validation_result = train_one_epoch(model, train_loader, val_loader)
+
+			train_loss[epoch] = train_result.loss
+			train_accuracy[epoch] = train_result.accuracy
+			validation_loss[epoch] = validation_result.loss
+			validation_accuracy[epoch] = validation_result.accuracy
+			if epoch % 10 == 0:
+				progress_bar.set_description(f"Epoch {epoch + 1} – Train Loss: {train_result.loss:.4f} - Validation Loss: {validation_result.loss:.4f}")
 
 	# plot the loss
 	plt.figure()
