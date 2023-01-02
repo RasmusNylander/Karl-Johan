@@ -82,23 +82,8 @@ def train_one_epoch(model, train_loader: DataLoader, validation_loader: DataLoad
 		loss.backward()
 		optimizer.step()
 
-	model.eval()
-	with torch.no_grad():
-		num_validation_batches: int = len(validation_loader)
-		validation_loss: Tensor = torch.empty(num_validation_batches, device=device)
-		validation_accuracy: Tensor = torch.empty(num_validation_batches, device=device)
-		for batch_index, (inputs, targets) in enumerate(validation_loader):
-			inputs: Tensor = inputs.to(device, dtype=torch.float32)
-			targets: Tensor = targets.to(device, dtype=torch.float32)
-
-			outputs: Tensor = model(inputs)
-
-			loss = loss_function(outputs, targets)
-
-			validation_loss[batch_index] = loss.item()
-			validation_accuracy[batch_index] = accuracy(outputs, targets)
-
-	return train_loss.mean().item(), train_accuracy.mean().item(), validation_loss.mean().item(), validation_accuracy.mean().item()
+	validation_result = test(model, validation_loader)
+	return train_loss.mean().item(), train_accuracy.mean().item(), validation_result.loss, validation_result.accuracy
 
 
 if __name__ == "__main__":
