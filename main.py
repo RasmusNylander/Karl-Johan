@@ -3,7 +3,7 @@ from math import sqrt, ceil
 import medmnist
 import torch
 from matplotlib import pyplot as plt
-from medmnist import INFO, Evaluator
+from medmnist import INFO
 
 import monai
 from monai.transforms import Compose, RandRotate90, ScaleIntensity
@@ -34,6 +34,31 @@ def plot_image(image: Tensor):
 			plt.imshow(image[row * cols + col], cmap="gray")
 			plt.axis("off")
 	plt.show()
+
+
+class TestResult:
+	def __init__(self, loss: float, accuracy: float):
+		self.loss = loss
+		self.accuracy = accuracy
+
+
+def test(model, dataloader: DataLoader) -> TestResult:
+	model.eval()
+	with torch.no_grad():
+		num_batches: int = len(dataloader)
+		loss: Tensor = torch.empty(num_batches, device=device)
+		accuracy_score: Tensor = torch.empty(num_batches, device=device)
+
+		for batch_index, (inputs, targets) in enumerate(dataloader):
+			inputs: Tensor = inputs.to(device, dtype=torch.float32)
+			targets: Tensor = targets.to(device, dtype=torch.float32)
+
+			outputs: Tensor = model(inputs)
+
+			loss[batch_index] = loss_function(outputs, targets).item()
+			accuracy_score[batch_index] = accuracy(outputs, targets)
+
+		return TestResult(loss.mean().item(), accuracy_score.mean().item())
 
 
 def train_one_epoch(model, train_loader: DataLoader, validation_loader: DataLoader) -> (float, float, float, float):
@@ -120,4 +145,7 @@ if __name__ == "__main__":
 	for epoch in tqdm(range(NUM_EPOCHS), desc="Training", unit="epoch"):
 		train_loss_mean, train_accuracy_mean, validation_loss_mean, validation_accuracy_mean = \
 			train_one_epoch(model, train_loader, val_loader)
-		print(f"Epoch {epoch + 1}/{NUM_EPOCHS} - Train loss: {train_loss_mean:.4f} - Train accuracy: {train_accuracy_mean:.4f} - Validation loss: {validation_loss_mean:.4f} - Validation accuracy: {validation_accuracy_mean:.4f}")
+		# print(f"Epoch {epoch + 1}/{NUM_EPOCHS} - Train loss: {train_loss_mean:.4f} - Train accuracy: {train_accuracy_mean:.4f} - Validation loss: {validation_loss_mean:.4f} - Validation accuracy: {validation_accuracy_mean:.4f}")
+
+	test_result: TestResult = test(model, test_loader)
+	print(f"Test loss: {test_result.loss:.4f} - Test accuracy: {test_result.accuracy:.4f}")
