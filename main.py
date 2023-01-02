@@ -8,6 +8,7 @@ from medmnist import INFO, Evaluator
 import monai
 from monai.transforms import Compose, RandRotate90, ScaleIntensity
 from torch import Tensor, randint
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 
@@ -34,47 +35,8 @@ def plot_image(image: Tensor):
 			plt.axis("off")
 	plt.show()
 
-BATCH_SIZE = 32
-NUM_EPOCHS = 5
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-dataset_name: str = "organmnist3d"
-download: bool = True
-
-info = INFO[dataset_name]
-num_classes = len(info["label"])
-DataClass = getattr(medmnist, info['python_class'])
-
-train_dataset = DataClass(split='train',  download=download, transform=Compose([ScaleIntensity(), RandRotate90()]))
-val_dataset = DataClass(split='val', download=download, transform=Compose([ScaleIntensity()]))
-test_dataset = DataClass(split='test', download=download, transform=Compose([ScaleIntensity()]))
-train_loader = monai.data.DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=True)
-val_loader = monai.data.DataLoader(dataset=val_dataset, batch_size=BATCH_SIZE, shuffle=False)
-test_loader = monai.data.DataLoader(dataset=test_dataset, batch_size=BATCH_SIZE, shuffle=False)
-
-# random_image = train_dataset[randint(0, len(train_dataset) - 1, [1])][0][0]
-# plot_image(random_image)
-
-model = torch.nn.Sequential(
-	torch.nn.Dropout(0.1),
-	torch.nn.Conv3d(1, 8, kernel_size=3, stride=2),
-	torch.nn.ReLU(),
-	torch.nn.Dropout(0.1),
-	torch.nn.Conv3d(8, 16, kernel_size=3, stride=2),
-	torch.nn.ReLU(),
-	torch.nn.Dropout(0.1),
-	torch.nn.Conv3d(16, 32, kernel_size=3, stride=2),
-	torch.nn.ReLU(),
-	torch.nn.Dropout(0.1),
-	torch.nn.MaxPool3d(kernel_size=2),
-	torch.nn.Flatten(),
-	torch.nn.Linear(32, 1),
-	torch.nn.Sigmoid()
-).to(device)
-optimizer = torch.optim.Adam(model.parameters(), 1e-3)
-loss_function = torch.nn.BCEWithLogitsLoss()
-
-for epoch in tqdm(range(NUM_EPOCHS), desc="Training", unit="epoch"):
+def train_one_epoch(model, train_loader: DataLoader, validation_loader: DataLoader) -> (float, float, float, float):
 	model.train()
 	num_training_batches = len(train_loader)
 	train_loss: Tensor = torch.empty(num_training_batches, device=device)
@@ -87,7 +49,6 @@ for epoch in tqdm(range(NUM_EPOCHS), desc="Training", unit="epoch"):
 		optimizer.zero_grad()
 		outputs: Tensor = model(inputs)
 
-		targets = targets.to(device, torch.float32)
 		loss = loss_function(outputs, targets)
 
 		train_loss[batch_index] = loss.item()
@@ -98,10 +59,10 @@ for epoch in tqdm(range(NUM_EPOCHS), desc="Training", unit="epoch"):
 
 	model.eval()
 	with torch.no_grad():
-		num_validation_batches: int = len(val_loader)
+		num_validation_batches: int = len(validation_loader)
 		validation_loss: Tensor = torch.empty(num_validation_batches, device=device)
 		validation_accuracy: Tensor = torch.empty(num_validation_batches, device=device)
-		for batch_index, (inputs, targets) in enumerate(val_loader):
+		for batch_index, (inputs, targets) in enumerate(validation_loader):
 			inputs: Tensor = inputs.to(device, dtype=torch.float32)
 			targets: Tensor = targets.to(device, dtype=torch.float32)
 
@@ -112,5 +73,51 @@ for epoch in tqdm(range(NUM_EPOCHS), desc="Training", unit="epoch"):
 			validation_loss[batch_index] = loss.item()
 			validation_accuracy[batch_index] = accuracy(outputs, targets)
 
+	return train_loss.mean().item(), train_accuracy.mean().item(), validation_loss.mean().item(), validation_accuracy.mean().item()
 
-	print(f"Epoch {epoch + 1}/{NUM_EPOCHS} - Train loss: {train_loss.mean():.4f} - Train accuracy: {train_accuracy.mean():.4f} - Validation loss: {validation_loss.mean():.4f} - Validation accuracy: {validation_accuracy.mean():.4f}")
+
+if __name__ == "__main__":
+	BATCH_SIZE = 32
+	NUM_EPOCHS = 10
+	device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+	dataset_name: str = "organmnist3d"
+	download: bool = True
+
+	info = INFO[dataset_name]
+	num_classes = len(info["label"])
+	DataClass = getattr(medmnist, info['python_class'])
+
+	train_dataset = DataClass(split='train',  download=download, transform=Compose([ScaleIntensity(), RandRotate90()]))
+	val_dataset = DataClass(split='val', download=download, transform=Compose([ScaleIntensity()]))
+	test_dataset = DataClass(split='test', download=download, transform=Compose([ScaleIntensity()]))
+	train_loader = monai.data.DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+	val_loader = monai.data.DataLoader(dataset=val_dataset, batch_size=BATCH_SIZE, shuffle=False)
+	test_loader = monai.data.DataLoader(dataset=test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+
+	# random_image = train_dataset[randint(0, len(train_dataset) - 1, [1])][0][0]
+	# plot_image(random_image)
+
+	model = torch.nn.Sequential(
+		torch.nn.Dropout(0.1),
+		torch.nn.Conv3d(1, 8, kernel_size=3, stride=2),
+		torch.nn.ReLU(),
+		torch.nn.Dropout(0.1),
+		torch.nn.Conv3d(8, 16, kernel_size=3, stride=2),
+		torch.nn.ReLU(),
+		torch.nn.Dropout(0.1),
+		torch.nn.Conv3d(16, 32, kernel_size=3, stride=2),
+		torch.nn.ReLU(),
+		torch.nn.Dropout(0.1),
+		torch.nn.MaxPool3d(kernel_size=2),
+		torch.nn.Flatten(),
+		torch.nn.Linear(32, 1),
+		torch.nn.Sigmoid()
+	).to(device)
+	optimizer = torch.optim.Adam(model.parameters(), 1e-3)
+	loss_function = torch.nn.BCEWithLogitsLoss()
+
+	for epoch in tqdm(range(NUM_EPOCHS), desc="Training", unit="epoch"):
+		train_loss_mean, train_accuracy_mean, validation_loss_mean, validation_accuracy_mean = \
+			train_one_epoch(model, train_loader, val_loader)
+		print(f"Epoch {epoch + 1}/{NUM_EPOCHS} - Train loss: {train_loss_mean:.4f} - Train accuracy: {train_accuracy_mean:.4f} - Validation loss: {validation_loss_mean:.4f} - Validation accuracy: {validation_accuracy_mean:.4f}")
