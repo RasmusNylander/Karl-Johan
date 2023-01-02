@@ -55,12 +55,21 @@ test_loader = monai.data.DataLoader(dataset=test_dataset, batch_size=BATCH_SIZE,
 # random_image = train_dataset[randint(0, len(train_dataset) - 1, [1])][0][0]
 # plot_image(random_image)
 
-
 model = torch.nn.Sequential(
-	torch.nn.Conv3d(1, 16, kernel_size=16, stride=3),
+	torch.nn.Dropout(0.1),
+	torch.nn.Conv3d(1, 8, kernel_size=3, stride=2),
 	torch.nn.ReLU(),
+	torch.nn.Dropout(0.1),
+	torch.nn.Conv3d(8, 16, kernel_size=3, stride=2),
+	torch.nn.ReLU(),
+	torch.nn.Dropout(0.1),
+	torch.nn.Conv3d(16, 32, kernel_size=3, stride=2),
+	torch.nn.ReLU(),
+	torch.nn.Dropout(0.1),
+	torch.nn.MaxPool3d(kernel_size=2),
 	torch.nn.Flatten(),
-	torch.nn.Linear(2000, 1),
+	torch.nn.Linear(32, 1),
+	torch.nn.Sigmoid()
 ).to(device)
 optimizer = torch.optim.Adam(model.parameters(), 1e-3)
 loss_function = torch.nn.BCEWithLogitsLoss()
