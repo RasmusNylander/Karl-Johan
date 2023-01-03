@@ -88,6 +88,9 @@ def train_one_epoch(model, dataloader: DataLoader) -> TestResult:
 
 	return train_result
 
+def one_hot_encode(label: numpy.ndarray) -> Tensor:
+	return torch.nn.functional.one_hot(torch.from_numpy(label).to(dtype=torch.int64), 11)[0]
+
 if __name__ == "__main__":
 	BATCH_SIZE = 32
 	NUM_EPOCHS = 200
@@ -100,14 +103,12 @@ if __name__ == "__main__":
 	num_classes = len(info["label"])
 	DataClass = getattr(medmnist, info['python_class'])
 
-	one_hot_encoding_transform = lambda label: torch.nn.functional.one_hot(torch.from_numpy(label).to(dtype=torch.int64), num_classes)[0]
-
-	train_dataset = DataClass(split='train',  download=download, transform=Compose([ScaleIntensity(), RandRotate90()]), target_transform=one_hot_encoding_transform)
-	val_dataset = DataClass(split='val', download=download, transform=Compose([ScaleIntensity()]), target_transform=one_hot_encoding_transform)
-	test_dataset = DataClass(split='test', download=download, transform=Compose([ScaleIntensity()]), target_transform=one_hot_encoding_transform)
-	train_loader = monai.data.DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=True, pin_memory=True)
-	val_loader = monai.data.DataLoader(dataset=val_dataset, batch_size=BATCH_SIZE, shuffle=False, pin_memory=True)
-	test_loader = monai.data.DataLoader(dataset=test_dataset, batch_size=BATCH_SIZE, shuffle=False, pin_memory=True)
+	train_dataset = DataClass(split='train',  download=download, transform=Compose([ScaleIntensity(), RandRotate90()]), target_transform=one_hot_encode)
+	val_dataset = DataClass(split='val', download=download, transform=Compose([ScaleIntensity()]), target_transform=one_hot_encode)
+	test_dataset = DataClass(split='test', download=download, transform=Compose([ScaleIntensity()]), target_transform=one_hot_encode)
+	train_loader = monai.data.DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=True, pin_memory=True, prefetch_factor=512, num_workers=3, persistent_workers=True)
+	val_loader = monai.data.DataLoader(dataset=val_dataset, batch_size=BATCH_SIZE, shuffle=False, pin_memory=True, prefetch_factor=512, num_workers=3, persistent_workers=True)
+	test_loader = monai.data.DataLoader(dataset=test_dataset, batch_size=BATCH_SIZE, shuffle=False, pin_memory=True, prefetch_factor=512, num_workers=3, persistent_workers=True)
 
 	for i in range(3):
 		random_image = train_dataset[randint(0, len(train_dataset) - 1, [1])][0][0]
