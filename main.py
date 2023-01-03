@@ -99,9 +99,11 @@ if __name__ == "__main__":
 	num_classes = len(info["label"])
 	DataClass = getattr(medmnist, info['python_class'])
 
-	train_dataset = DataClass(split='train',  download=download, transform=Compose([ScaleIntensity(), RandRotate90()]))
-	val_dataset = DataClass(split='val', download=download, transform=Compose([ScaleIntensity()]))
-	test_dataset = DataClass(split='test', download=download, transform=Compose([ScaleIntensity()]))
+	one_hot_encoding_transform = lambda label: torch.nn.functional.one_hot(torch.from_numpy(label).to(dtype=torch.int64), num_classes)[0]
+
+	train_dataset = DataClass(split='train',  download=download, transform=Compose([ScaleIntensity(), RandRotate90()]), target_transform=one_hot_encoding_transform)
+	val_dataset = DataClass(split='val', download=download, transform=Compose([ScaleIntensity()]), target_transform=one_hot_encoding_transform)
+	test_dataset = DataClass(split='test', download=download, transform=Compose([ScaleIntensity()]), target_transform=one_hot_encoding_transform)
 	train_loader = monai.data.DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=True, pin_memory=True)
 	val_loader = monai.data.DataLoader(dataset=val_dataset, batch_size=BATCH_SIZE, shuffle=False, pin_memory=True)
 	test_loader = monai.data.DataLoader(dataset=test_dataset, batch_size=BATCH_SIZE, shuffle=False, pin_memory=True)
@@ -123,7 +125,7 @@ if __name__ == "__main__":
 		torch.nn.Dropout(0.1),
 		torch.nn.MaxPool3d(kernel_size=2),
 		torch.nn.Flatten(),
-		torch.nn.Linear(32, 1),
+		torch.nn.Linear(32, num_classes),
 		torch.nn.Sigmoid()
 	).to(device)
 	optimizer = torch.optim.Adam(model.parameters(), 1e-3)
