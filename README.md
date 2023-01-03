@@ -11,6 +11,11 @@
 
 ## Problem description
 
+## Meeting plan
+- Thursday 5th. at 15
+- Monday 9th. at 14
+- Thursday 12th. at 14
+
 ## Initial plan
 - Phase 1
   - Get familiar with Monai by classifing MedNIST data using deep learning. Comparison between two or more deep learning methods for 3D classification of the six 3D datasets. 
