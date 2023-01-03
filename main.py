@@ -15,7 +15,7 @@ from DummyModel import DummyModel
 
 
 def accuracy(predictions: Tensor, labels: Tensor):
-	return (predictions == labels).sum().item() / labels.numel()
+	return (predictions.argmax(dim=1) == labels.argmax(dim=1)).sum().item() / labels.numel()
 
 
 def plot_image(image: Tensor):
