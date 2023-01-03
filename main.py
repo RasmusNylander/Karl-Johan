@@ -90,7 +90,7 @@ def train_one_epoch(model, dataloader: DataLoader) -> TestResult:
 
 if __name__ == "__main__":
 	BATCH_SIZE = 32
-	NUM_EPOCHS = 100
+	NUM_EPOCHS = 200
 	device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 	dataset_name: str = "organmnist3d"
@@ -136,6 +136,8 @@ if __name__ == "__main__":
 	plt.figure()
 	plt.plot(train_loss.cpu(), label="train loss")
 	plt.plot(validation_loss.cpu(), label="validation loss")
+	plt.plot(train_accuracy.cpu(), label="train accuracy")
+	plt.plot(validation_accuracy.cpu(), label="validation accuracy")
 	plt.legend()
 	plt.show()
 
