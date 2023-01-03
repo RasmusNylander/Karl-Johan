@@ -109,9 +109,9 @@ if __name__ == "__main__":
 	train_dataset = DataClass(split='train',  download=download, transform=Compose([ScaleIntensity(), RandRotate90()]), target_transform=one_hot_encode)
 	val_dataset = DataClass(split='val', download=download, transform=Compose([ScaleIntensity()]), target_transform=one_hot_encode)
 	test_dataset = DataClass(split='test', download=download, transform=Compose([ScaleIntensity()]), target_transform=one_hot_encode)
-	train_loader = monai.data.DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=True, pin_memory=True, prefetch_factor=512, num_workers=3, persistent_workers=True)
-	val_loader = monai.data.DataLoader(dataset=val_dataset, batch_size=BATCH_SIZE, shuffle=False, pin_memory=True, prefetch_factor=512, num_workers=3, persistent_workers=True)
-	test_loader = monai.data.DataLoader(dataset=test_dataset, batch_size=BATCH_SIZE, shuffle=False, pin_memory=True, prefetch_factor=512, num_workers=3, persistent_workers=True)
+	train_loader = monai.data.DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=True, pin_memory=True, prefetch_factor=64, num_workers=3, persistent_workers=True)
+	val_loader = monai.data.DataLoader(dataset=val_dataset, batch_size=BATCH_SIZE, shuffle=False, pin_memory=True, prefetch_factor=64, num_workers=3, persistent_workers=True)
+	test_loader = monai.data.DataLoader(dataset=test_dataset, batch_size=BATCH_SIZE, shuffle=False, pin_memory=True, prefetch_factor=64, num_workers=3, persistent_workers=True)
 
 	for i in range(3):
 		random_image = train_dataset[randint(0, len(train_dataset) - 1, [1])][0][0]
