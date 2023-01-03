@@ -119,7 +119,7 @@ if __name__ == "__main__":
 
 	model = DummyModel(NUMBER_OF_CLASSES).to(device)
 	optimizer = torch.optim.Adam(model.parameters(), 1e-3)
-	loss_function = torch.nn.BCEWithLogitsLoss()
+	loss_function = torch.nn.CrossEntropyLoss()
 
 	train_loss: Tensor = torch.empty(NUM_EPOCHS, device=device)
 	train_accuracy: Tensor = torch.empty(NUM_EPOCHS, device=device)
