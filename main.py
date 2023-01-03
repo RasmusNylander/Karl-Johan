@@ -11,9 +11,11 @@ from torch import Tensor, randint
 from torch.utils.data import DataLoader
 from tqdm import tqdm, trange
 
+from DummyModel import DummyModel
+
 
 def accuracy(predictions: Tensor, labels: Tensor):
-	return (predictions == labels).sum().item() / labels.numel()
+	return (predictions.argmax(dim=1) == labels.argmax(dim=1)).sum().item() / labels.shape[0]
 
 
 def plot_image(image: Tensor):
@@ -86,10 +88,9 @@ def train_one_epoch(model, dataloader: DataLoader) -> TestResult:
 
 	return train_result
 
-
 if __name__ == "__main__":
 	BATCH_SIZE = 32
-	NUM_EPOCHS = 100
+	NUM_EPOCHS = 200
 	device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 	dataset_name: str = "organmnist3d"
@@ -112,26 +113,7 @@ if __name__ == "__main__":
 		random_image = train_dataset[randint(0, len(train_dataset) - 1, [1])][0][0]
 		plot_image(random_image)
 
-	model = torch.nn.Sequential(
-		torch.nn.Dropout(0.1),
-		torch.nn.Conv3d(1, 4, kernel_size=3, stride=1),
-		torch.nn.ReLU(),
-		torch.nn.Dropout(0.1),
-		torch.nn.Conv3d(4, 8, kernel_size=3, stride=1),
-		torch.nn.ReLU(),
-		torch.nn.Dropout(0.1),
-		torch.nn.MaxPool3d(kernel_size=3),
-		torch.nn.Dropout(0.1),
-		torch.nn.Conv3d(8, 16, kernel_size=3, stride=1),
-		torch.nn.ReLU(),
-		torch.nn.Dropout(0.1),
-		torch.nn.MaxPool3d(kernel_size=3),
-		torch.nn.Flatten(),
-		torch.nn.Linear(128, 64),
-		torch.nn.ReLU(),
-		torch.nn.Linear(64, num_classes),
-		torch.nn.Softmax()
-	).to(device)
+	model = DummyModel(num_classes).to(device)
 	optimizer = torch.optim.Adam(model.parameters(), 1e-3)
 	loss_function = torch.nn.BCEWithLogitsLoss()
 
@@ -154,6 +136,8 @@ if __name__ == "__main__":
 	plt.figure()
 	plt.plot(train_loss.cpu(), label="train loss")
 	plt.plot(validation_loss.cpu(), label="validation loss")
+	plt.plot(train_accuracy.cpu(), label="train accuracy")
+	plt.plot(validation_accuracy.cpu(), label="validation accuracy")
 	plt.legend()
 	plt.show()
 
