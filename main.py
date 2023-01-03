@@ -1,6 +1,7 @@
 from math import sqrt, ceil
 
 import medmnist
+import numpy
 import torch
 from matplotlib import pyplot as plt
 from medmnist import INFO
