@@ -6,3 +6,5 @@ pandas
 jupyterlab
 matplotlib
 tensorboard
+acsconv
+timm
