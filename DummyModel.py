@@ -3,10 +3,10 @@ import torch
 
 class Convolution(torch.nn.Module):
 
-	def __init__(self, in_channels: int, out_channels: int, kernel_size: int):
+	def __init__(self, in_channels: int, out_channels: int, kernel_size: int, padding: int = 0):
 		super(Convolution, self).__init__()
 		self.dropout = torch.nn.Dropout(0.1)
-		self.conv = torch.nn.Conv3d(in_channels, out_channels, kernel_size)
+		self.conv = torch.nn.Conv3d(in_channels, out_channels, kernel_size, padding=padding)
 		self.relu = torch.nn.ReLU()
 
 	def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -20,6 +20,7 @@ class DummyModel(torch.nn.Module):
 	def __init__(self, number_of_classes: int):
 		super(DummyModel, self).__init__()
 		self.layers = torch.nn.Sequential(
+			torch.nn.BatchNorm3d(1),
 			Convolution(1, 4, 3),
 			Convolution(4, 8, 3),
 			torch.nn.Dropout(0.1),
