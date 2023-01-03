@@ -106,7 +106,7 @@ if __name__ == "__main__":
 	assert num_classes == NUMBER_OF_CLASSES
 	DataClass = getattr(medmnist, info['python_class'])
 
-	train_dataset = DataClass(split='train',  download=download, transform=Compose([ScaleIntensity(), RandRotate90()]), target_transform=one_hot_encode)
+	train_dataset = DataClass(split='train',  download=download, transform=Compose([ScaleIntensity(), RandRotate90(0, 1), RandRotate90(0, 2)]), target_transform=one_hot_encode)
 	val_dataset = DataClass(split='val', download=download, transform=Compose([ScaleIntensity()]), target_transform=one_hot_encode)
 	test_dataset = DataClass(split='test', download=download, transform=Compose([ScaleIntensity()]), target_transform=one_hot_encode)
 	train_loader = monai.data.DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=True, pin_memory=True, prefetch_factor=64, num_workers=3, persistent_workers=True)
