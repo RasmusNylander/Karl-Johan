@@ -118,7 +118,7 @@ if __name__ == "__main__":
 		plot_image(random_image)
 
 	model = DummyModel(NUMBER_OF_CLASSES).to(device)
-	optimizer = torch.optim.Adam(model.parameters(), 1e-3)
+	optimizer = torch.optim.Adam(model.parameters(), 1e-4, weight_decay=0.01)
 	loss_function = torch.nn.CrossEntropyLoss()
 
 	train_loss: Tensor = torch.empty(NUM_EPOCHS, device=device)
