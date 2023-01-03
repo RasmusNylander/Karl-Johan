@@ -133,8 +133,7 @@ if __name__ == "__main__":
 			train_loss[epoch], train_accuracy[epoch] = train_result.loss, train_result.accuracy
 			validation_loss[epoch], validation_accuracy[epoch] = validation_result.loss, validation_result.accuracy
 
-			if epoch % 10 == 0:
-				progress_bar.set_description(f"Epoch {epoch + 1} – Train Loss: {train_result.loss:.4f} Train accuracy: {train_result.accuracy:.4f} - Validation Loss: {validation_result.loss:.4f} Validation accuracy: {validation_result.accuracy:.4f}")
+			progress_bar.set_description(f"Epoch {epoch + 1} – Train Loss: {train_result.loss:.4f} Train accuracy: {train_result.accuracy:.4f} - Validation Loss: {validation_result.loss:.4f} Validation accuracy: {validation_result.accuracy:.4f}")
 
 	# plot the loss
 	plt.figure()
