@@ -114,19 +114,23 @@ if __name__ == "__main__":
 
 	model = torch.nn.Sequential(
 		torch.nn.Dropout(0.1),
-		torch.nn.Conv3d(1, 8, kernel_size=3, stride=2),
+		torch.nn.Conv3d(1, 4, kernel_size=3, stride=1),
 		torch.nn.ReLU(),
 		torch.nn.Dropout(0.1),
-		torch.nn.Conv3d(8, 16, kernel_size=3, stride=2),
+		torch.nn.Conv3d(4, 8, kernel_size=3, stride=1),
 		torch.nn.ReLU(),
 		torch.nn.Dropout(0.1),
-		torch.nn.Conv3d(16, 32, kernel_size=3, stride=2),
+		torch.nn.MaxPool3d(kernel_size=3),
+		torch.nn.Dropout(0.1),
+		torch.nn.Conv3d(8, 16, kernel_size=3, stride=1),
 		torch.nn.ReLU(),
 		torch.nn.Dropout(0.1),
-		torch.nn.MaxPool3d(kernel_size=2),
+		torch.nn.MaxPool3d(kernel_size=3),
 		torch.nn.Flatten(),
-		torch.nn.Linear(32, num_classes),
-		torch.nn.Sigmoid()
+		torch.nn.Linear(128, 64),
+		torch.nn.ReLU(),
+		torch.nn.Linear(64, num_classes),
+		torch.nn.Softmax()
 	).to(device)
 	optimizer = torch.optim.Adam(model.parameters(), 1e-3)
 	loss_function = torch.nn.BCEWithLogitsLoss()
