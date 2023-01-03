@@ -23,8 +23,8 @@ def plot_image(image: Tensor):
 	rows = ceil(sqrt(num_slices))
 	cols = ceil(num_slices / rows)
 
-	image_width = cols * (image.shape[2] + 2) // 100
-	image_height = rows * (image.shape[1] + 2) // 100
+	image_width = cols * (image.shape[2] + 2) // 10
+	image_height = rows * (image.shape[1] + 2) // 10
 
 	plt.figure("image", (image_width, image_height))
 	for row in range(rows):
