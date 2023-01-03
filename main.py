@@ -140,6 +140,10 @@ if __name__ == "__main__":
 	plt.figure()
 	plt.plot(train_loss.cpu(), label="train loss")
 	plt.plot(validation_loss.cpu(), label="validation loss")
+	plt.legend()
+	plt.show()
+
+	plt.figure()
 	plt.plot(train_accuracy.cpu(), label="train accuracy")
 	plt.plot(validation_accuracy.cpu(), label="validation accuracy")
 	plt.legend()
