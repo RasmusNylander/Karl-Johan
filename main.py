@@ -14,6 +14,7 @@ from tqdm import tqdm, trange
 
 from DummyModel import DummyModel
 
+NUMBER_OF_CLASSES = 11
 
 def accuracy(predictions: Tensor, labels: Tensor):
 	return (predictions.argmax(dim=1) == labels.argmax(dim=1)).sum().item() / labels.shape[0]
@@ -90,11 +91,11 @@ def train_one_epoch(model, dataloader: DataLoader) -> TestResult:
 	return train_result
 
 def one_hot_encode(label: numpy.ndarray) -> Tensor:
-	return torch.nn.functional.one_hot(torch.from_numpy(label).to(dtype=torch.int64), 11)[0]
+	return torch.nn.functional.one_hot(torch.from_numpy(label).to(dtype=torch.int64), NUMBER_OF_CLASSES)[0]
 
 if __name__ == "__main__":
 	BATCH_SIZE = 32
-	NUM_EPOCHS = 200
+	NUM_EPOCHS = 1002
 	device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 	dataset_name: str = "organmnist3d"
@@ -102,6 +103,7 @@ if __name__ == "__main__":
 
 	info = INFO[dataset_name]
 	num_classes = len(info["label"])
+	assert num_classes == NUMBER_OF_CLASSES
 	DataClass = getattr(medmnist, info['python_class'])
 
 	train_dataset = DataClass(split='train',  download=download, transform=Compose([ScaleIntensity(), RandRotate90()]), target_transform=one_hot_encode)
@@ -115,7 +117,7 @@ if __name__ == "__main__":
 		random_image = train_dataset[randint(0, len(train_dataset) - 1, [1])][0][0]
 		plot_image(random_image)
 
-	model = DummyModel(num_classes).to(device)
+	model = DummyModel(NUMBER_OF_CLASSES).to(device)
 	optimizer = torch.optim.Adam(model.parameters(), 1e-3)
 	loss_function = torch.nn.BCEWithLogitsLoss()
 
