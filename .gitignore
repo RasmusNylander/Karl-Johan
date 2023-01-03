@@ -133,4 +133,5 @@ dmypy.json
 
 # Project specific
 testing.ipynb
-/output
+/outputs
+*.pth
