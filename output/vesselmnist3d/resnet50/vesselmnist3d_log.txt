@@ -1,0 +1,5 @@
+vesselmnist3d
+train  auc: 1.00000  acc: 1.00000
+val  auc: 0.74572  acc: 0.87500
+test  auc: 0.80764  acc: 0.89005
+
