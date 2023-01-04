@@ -38,7 +38,7 @@ class DummyModel(torch.nn.Module):
 			torch.nn.ReLU(),
 			torch.nn.Dropout(0.3),
 			torch.nn.Linear(64, number_of_classes),
-			torch.nn.Softmax()
+			torch.nn.Softmax(dim=1)
 		)
 
 	def forward(self, x: torch.Tensor) -> torch.Tensor:
