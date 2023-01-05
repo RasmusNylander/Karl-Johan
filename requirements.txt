@@ -34,3 +34,4 @@ scikit-image
 scipy
 SimpleITK
 six
+plotly

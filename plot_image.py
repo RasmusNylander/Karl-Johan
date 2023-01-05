@@ -1,6 +1,8 @@
 from matplotlib import pyplot as plt
 from math import ceil, sqrt
+import numpy as np
 from torch import Tensor
+import plotly.graph_objects as go
 
 
 def plot_image(image: Tensor) -> None:
@@ -21,3 +23,21 @@ def plot_image(image: Tensor) -> None:
 			plt.imshow(image[row * cols + col], cmap="gray")
 			plt.axis("off")
 	plt.show()
+
+
+def plot_volume(attention_map):
+	X, Y, Z = np.mgrid[0:28, 0:28, 0:28]
+	values = attention_map
+
+	fig = go.Figure(data=go.Volume(
+		x=X.flatten(),
+		y=Y.flatten(),
+		z=Z.flatten(),
+		value=values.flatten(),
+		isomin=-0.1,
+		isomax=0.8,
+		opacity=0.1,  # needs to be small to see through all surfaces
+		surface_count=21,  # needs to be a large number for good volume rendering
+		colorscale='RdBu'
+	))
+	fig.show()
