@@ -5,8 +5,8 @@ from torch import Tensor
 
 def plot_image(image: Tensor) -> None:
 	num_slices = image.shape[0]
-	rows = ceil(sqrt(num_slices))
-	cols = ceil(num_slices / rows)
+	rows = int(ceil(sqrt(num_slices)))
+	cols = int(ceil(num_slices / rows))
 
 	image_width = cols * (image.shape[2] + 2) // 10
 	image_height = rows * (image.shape[1] + 2) // 10
