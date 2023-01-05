@@ -1,5 +1,5 @@
 from matplotlib import pyplot as plt
-from numpy import ceil, sqrt
+from math import ceil, sqrt
 from torch import Tensor
 
 
