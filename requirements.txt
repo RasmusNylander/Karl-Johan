@@ -9,7 +9,6 @@ matplotlib
 tensorboard
 acsconv
 timm
-medcam
 certifi
 cycler
 decorator
