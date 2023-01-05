@@ -37,7 +37,7 @@ def _preprocessing(attention_map, mask, attention_threshold):
     if np.sum(attention_map < 0) > 0:  # For gbp and ggcam as they contain negative values, which would otherwise falsify the evaluation
         attention_map = np.abs(attention_map)
     attention_map = medcam_utils.interpolate(attention_map, mask.shape, squeeze=True)
-    attention_map = medcam_utils.normalize(attention_map.astype(np.float))
+    attention_map = medcam_utils.normalize(attention_map.astype(np.float64))
     weights = copy.deepcopy(attention_map)
     mask = np.array(mask, dtype=int)
     if np.min(attention_map) == np.max(attention_map):
@@ -53,8 +53,8 @@ def _intersection_over_attention(binary_attention_map, mask, weights):
     """(Weighted) intersection over attention. How much of (weighted) total attention is inside the ground truth mask."""
     intersection = binary_attention_map & mask
     if weights is not None:
-        intersection = intersection.astype(np.float) * weights
-        binary_attention_map = binary_attention_map.astype(np.float) * weights
+        intersection = intersection.astype(np.float64) * weights
+        binary_attention_map = binary_attention_map.astype(np.float64) * weights
     ioa = np.sum(intersection) / np.sum(binary_attention_map)
     return ioa
 
@@ -63,10 +63,10 @@ def _intersection_over_union(binary_attention_map, mask, weights):  # TODO: wiou
     intersection = binary_attention_map & mask
     if weights is not None:
         outer_attention = binary_attention_map - intersection
-        outer_attention = outer_attention.astype(np.float) * weights
-        union = outer_attention + mask.astype(np.float)
-        intersection = intersection.astype(np.float) * weights
+        outer_attention = outer_attention.astype(np.float64) * weights
+        union = outer_attention + mask.astype(np.float64)
+        intersection = intersection.astype(np.float64) * weights
     else:
         union = binary_attention_map | mask
-    iou = np.sum(intersection) / np.sum(union).astype(np.float)
+    iou = np.sum(intersection) / np.sum(union).astype(np.float64)
     return iou
