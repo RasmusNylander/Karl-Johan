@@ -101,11 +101,10 @@ def inject(model, output_dir=None, backend='gcam', layer='auto', label=None, dat
     if output_dir is not None:
         Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-    model_clone = copy.copy(model)
-    model_clone.eval()
+    model.eval()
     # Save the original forward of the model
     # This forward will be called by the backend, so if someone writes a new backend they only need to call model.model_forward and not model.medcam_dict['model_forward']
-    setattr(model_clone, 'model_forward', model_clone.forward)
+    setattr(model, 'model_forward', model.forward)
 
     # Save every other attribute in a dict which is added to the model attributes
     # It is ugly but it avoids name conflicts
@@ -128,38 +127,38 @@ def inject(model, output_dir=None, backend='gcam', layer='auto', label=None, dat
     medcam_dict['data_shape'] = data_shape
     medcam_dict['pickle_maps'] = []
     if evaluate:
-        medcam_dict['Evaluator'] = Evaluator(output_dir + "/", metric=metric, threshold=threshold, layer_ordering=medcam_utils.get_layers(model_clone))
+        medcam_dict['Evaluator'] = Evaluator(output_dir + "/", metric=metric, threshold=threshold, layer_ordering=medcam_utils.get_layers(model))
     medcam_dict['current_attention_map'] = None
     medcam_dict['current_layer'] = None
-    medcam_dict['device'] = next(model_clone.parameters()).device
+    medcam_dict['device'] = next(model.parameters()).device
     medcam_dict['tested'] = False
     medcam_dict['enabled'] = enabled
-    setattr(model_clone, 'medcam_dict', medcam_dict)
+    setattr(model, 'medcam_dict', medcam_dict)
 
     if output_dir is None and (save_scores or save_maps or save_pickle or evaluate):
         raise ValueError("output_dir needs to be set if save_scores, save_maps, save_pickle or evaluate is set to true")
 
     # Append methods methods to the model
-    model_clone.get_layers = types.MethodType(get_layers, model_clone)
-    model_clone.get_attention_map = types.MethodType(get_attention_map, model_clone)
-    model_clone.save_attention_map = types.MethodType(save_attention_map, model_clone)
-    model_clone.replace_output = types.MethodType(replace_output, model_clone)
-    model_clone.dump = types.MethodType(dump, model_clone)
-    model_clone.forward = types.MethodType(forward, model_clone)
-    model_clone.enable_medcam = types.MethodType(enable_medcam, model_clone)
-    model_clone.disable_medcam = types.MethodType(disable_medcam, model_clone)
-    model_clone.test_run = types.MethodType(test_run, model_clone)
+    model.get_layers = types.MethodType(get_layers, model)
+    model.get_attention_map = types.MethodType(get_attention_map, model)
+    model.save_attention_map = types.MethodType(save_attention_map, model)
+    model.replace_output = types.MethodType(replace_output, model)
+    model.dump = types.MethodType(dump, model)
+    model.forward = types.MethodType(forward, model)
+    model.enable_medcam = types.MethodType(enable_medcam, model)
+    model.disable_medcam = types.MethodType(disable_medcam, model)
+    model.test_run = types.MethodType(test_run, model)
 
-    model_clone._assign_backend = types.MethodType(_assign_backend, model_clone)
-    model_clone._process_attention_maps = types.MethodType(_process_attention_maps, model_clone)
-    model_clone._save_attention_map = types.MethodType(_save_attention_map, model_clone)
-    model_clone._replace_or_return = types.MethodType(_replace_or_return, model_clone)
+    model._assign_backend = types.MethodType(_assign_backend, model)
+    model._process_attention_maps = types.MethodType(_process_attention_maps, model)
+    model._save_attention_map = types.MethodType(_save_attention_map, model)
+    model._replace_or_return = types.MethodType(_replace_or_return, model)
 
-    model_backend, heatmap = _assign_backend(backend, model_clone, layer, None, retain_graph)  # TODO: Remove postprocessor in a later version
+    model_backend, heatmap = _assign_backend(backend, model, layer, None, retain_graph)  # TODO: Remove postprocessor in a later version
     medcam_dict['model_backend'] = model_backend
     medcam_dict['heatmap'] = heatmap
 
-    return model_clone
+    return model
 
 def get_layers(self, reverse=False):
     """Returns the layers of the model. Optionally reverses the order of the layers."""
