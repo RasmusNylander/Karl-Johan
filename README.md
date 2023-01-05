@@ -29,7 +29,7 @@
   - Verify the data by applying network visualisation to insect model
  
 ## TODOs
-- Create requirement file (so all our envs are the same)
+[] Create requirement file (so all our envs are the same)
 - Make sure all have acess to HPC and know how to use it
 - Create a problem description
 
