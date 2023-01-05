@@ -90,8 +90,7 @@ def main(data_flag, output_root, num_epochs, gpu_ids, batch_size, conv, pretrain
             model = model_to_syncbn(Conv3dConverter(model, i3d_repeat_axis=-3))
         else:
             model = model_to_syncbn(Conv3dConverter(model, i3d_repeat_axis=None))
-            
-    model = medcam.inject(model, output_dir="attention_maps", save_maps=True)
+
     model = model.to(device)
 
     train_evaluator = medmnist.Evaluator(data_flag, 'train')
