@@ -1,5 +1,3 @@
-from math import sqrt, ceil
-
 import medmnist
 import numpy
 import torch
@@ -18,26 +16,6 @@ NUMBER_OF_CLASSES = 11
 
 def accuracy(predictions: Tensor, labels: Tensor):
 	return (predictions.argmax(dim=1) == labels.argmax(dim=1)).sum().item() / labels.shape[0]
-
-
-def plot_image(image: Tensor):
-	num_slices = image.shape[0]
-	rows = ceil(sqrt(num_slices))
-	cols = ceil(num_slices / rows)
-
-	image_width = cols * (image.shape[2] + 2) // 10
-	image_height = rows * (image.shape[1] + 2) // 10
-
-	plt.figure("image", (image_width, image_height))
-	for row in range(rows):
-		for col in range(cols):
-			if row * cols + col >= num_slices:
-				plt.show()
-				return
-			plt.subplot(rows, cols, row * cols + col + 1)
-			plt.imshow(image[row * cols + col], cmap="gray")
-			plt.axis("off")
-	plt.show()
 
 
 class TestResult:
