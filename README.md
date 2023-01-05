@@ -30,8 +30,8 @@
  
 ## TODOs
 - [x] Create requirement file (so all our envs are the same)
-- Make sure all have acess to HPC and know how to use it
-- Create a problem description
+- [x] Make sure all have acess to HPC and know how to use it
+- [ ] Create a problem description
 
 ## Questions for superviser meeting:
 - Is hand-in only a slide deck with comments, and how elaborate should the comments be?
