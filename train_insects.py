@@ -72,8 +72,7 @@ def test(model, dataloader: DataLoader, loss_function: _Loss, device: Device) ->
 def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-
-    train_loader, test_loader = make_dataloaders(batch_size=batch_size, seed=69420, data_path=DATA_PATH, transforms=True, pin_memory=False)
+    train_loader, test_loader = make_dataloaders(batch_size=batch_size, seed=69420, data_path=data_path, transforms=True, pin_memory=False)
     NUM_CLASSES = len(train_loader.dataset.get_image_classes())
 
     learning_rate = 1e-3
