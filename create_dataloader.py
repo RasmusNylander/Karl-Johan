@@ -12,7 +12,7 @@ from torch.utils.data import random_split
 from torchvision.transforms import RandomRotation
 
 
-class dataset(Dataset):
+class Dataset(Dataset):
     def __init__(self, data_path, train, seed=42, as_rgb=False, transforms = False):
         if train:
             self.image_paths = list(
@@ -42,6 +42,8 @@ class dataset(Dataset):
         image_path = self.image_paths[idx]
 
         image = io.imread(image_path)
+        # image = image[::8, ::8, ::8]
+        # image = image[::16, ::16, ::16]
         image = np.expand_dims(image, 0)
 
         X = torch.Tensor(image)
@@ -84,8 +86,8 @@ def make_dataloaders(
     Creates a train and test dataloader with a variable batch size and image shape.
     And using a weighted sampler for the training dataloader to have balanced mini-batches when training.
     """
-    train_set = dataset(data_path=data_path, train=True, seed=seed, as_rgb=as_rgb, transforms=transforms)
-    test_set = dataset(data_path=data_path, train=False, seed=seed, as_rgb=as_rgb)
+    train_set = Dataset(data_path=data_path, train=True, seed=seed, as_rgb=as_rgb, transforms=transforms)
+    test_set = Dataset(data_path=data_path, train=False, seed=seed, as_rgb=as_rgb)
 
     train_loader = DataLoader(
         train_set,
