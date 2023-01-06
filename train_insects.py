@@ -69,10 +69,10 @@ def test(model, dataloader: DataLoader, loss_function: _Loss, device: Device) ->
 
 
 
-def main(DATA_PATH, OUTPUT_ROOT, model_pick, batch_size, num_epochs):
+def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    train_loader, test_loader = make_dataloaders(batch_size=batch_size, seed=69420, data_path=DATA_PATH, transforms=True)
+    train_loader, test_loader = make_dataloaders(batch_size=batch_size, seed=69420, data_path=data_path, transforms=True)
     NUM_CLASSES = len(train_loader.dataset.get_image_classes())
 
     learning_rate = 1e-3
@@ -104,7 +104,7 @@ def main(DATA_PATH, OUTPUT_ROOT, model_pick, batch_size, num_epochs):
     loss_function = torch.nn.CrossEntropyLoss()
 
 
-    output_root = os.path.join(OUTPUT_ROOT, time.strftime("%y%m%d_%H%M%S"))
+    output_root = os.path.join(output_path, time.strftime("%y%m%d_%H%M%S"))
     if not os.path.exists(output_root):
         os.makedirs(output_root)
 
@@ -181,10 +181,10 @@ if __name__ == "__main__":
     parser.add_argument("--num_epochs", default="100", type=int)
     
     args = parser.parse_args()
-    DATA_PATH = args.data_path
-    OUTPUT_ROOT = args.output_path
+    data_path = args.data_path
+    output_path = args.output_path
     model = args.model
     batch_size = args.batch_size
     num_epochs = args.num_epochs
 
-    main(DATA_PATH, OUTPUT_ROOT, model, batch_size, num_epochs)
+    main(data_path, output_path, model, batch_size, num_epochs)
