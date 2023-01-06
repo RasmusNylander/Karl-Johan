@@ -92,7 +92,7 @@ def main(DATA_PATH, OUTPUT_ROOT, model_pick, batch_size, num_epochs):
         model = ACSConverter(ResNet50(in_channels=1, num_classes=NUM_CLASSES)).to(device)
     elif model_pick == "convnext":
         model = convnext.convnext_small(pretrained=True)
-        model.head = nn.Linear(768, NUM_CLASSES, bias=True)
+        model.head = torch.nn.Linear(768, NUM_CLASSES, bias=True)
         model.to(device)
         
     wandb.watch(model)
