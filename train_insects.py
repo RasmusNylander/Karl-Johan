@@ -72,8 +72,9 @@ def test(model, dataloader: DataLoader, loss_function: _Loss, device: Device) ->
 def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    train_loader, test_loader = make_dataloaders(batch_size=batch_size, seed=69420, data_path=data_path, transforms=True)
-    num_classes = len(train_loader.dataset.get_image_classes())
+
+    train_loader, test_loader = make_dataloaders(batch_size=batch_size, seed=69420, data_path=DATA_PATH, transforms=True, pin_memory=False)
+    NUM_CLASSES = len(train_loader.dataset.get_image_classes())
 
     learning_rate = 1e-3
     milestones = [0.5 * num_epochs, 0.75 * num_epochs]
@@ -171,9 +172,7 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
     writer.close()
 
 if __name__ == "__main__":
-    wandb.init(project="3d-insect-classification", entity="ml_dtu")
     parser = argparse.ArgumentParser(description="RUN model on insect data")
-
     parser.add_argument("--data_path", default="./datasets/sorted_downscaled", type=str)
     parser.add_argument("--output_path", default="./output", type=str)
     parser.add_argument("--model", default="resnet18", type=str)
@@ -186,5 +185,7 @@ if __name__ == "__main__":
     model = args.model
     batch_size = args.batch_size
     num_epochs = args.num_epochs
+    
+    wandb.init(project="3d-insect-classification", entity="ml_dtu",name=model)
 
     main(data_path, output_path, model, batch_size, num_epochs)
