@@ -126,7 +126,7 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
             train_loss = train_one_epoch(model, train_loader, loss_function, optimizer, device, writer, log_offset)
 
             train_metrics = test(model, train_loader,  loss_function, device)
-            test_metrics = test(model, train_loader,  loss_function, device)
+            test_metrics = test(model, test_loader,  loss_function, device)
 
             scheduler.step()
             log_offset += len(train_loader)
