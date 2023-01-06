@@ -31,6 +31,7 @@ class dataset(Dataset):
         self.image_classes.sort()
         self.name_to_label = {c: id for id, c in enumerate(self.image_classes)}
         self.rng = np.random.default_rng(seed=seed)
+        self.as_rgb = as_rgb
 
     def __len__(self):
         return len(self.image_paths)  # len(self.data)
@@ -42,9 +43,9 @@ class dataset(Dataset):
         image = np.expand_dims(image, 0)
 
         X = torch.Tensor(image)
-        if as_rgb:
+        if self.as_rgb:
             size = X.shape
-            X.expand([size[0], 3, size[2], size[3], size[4]])
+            X = X.expand([3, size[1], size[2], size[3]])
 
         c = os.path.split(os.path.split(image_path)[0])[1]
         y = self.name_to_label[c]
