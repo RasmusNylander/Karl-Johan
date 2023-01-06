@@ -139,7 +139,7 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
                 wandb.log({f"{prefix}area under curve mean": result.auc.mean().item()})
                 for index, value in enumerate(result.auc):
                     writer.add_scalar(f"{prefix}area under curve, {index}", value.item(), epoch)
-                    wandb.log(f"{prefix}area under curve, {index}", value.item(), epoch)
+                    wandb.log(f"{prefix}area under curve, {index}": value.item())
 
 
 
