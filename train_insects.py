@@ -78,6 +78,8 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
         train_loader, test_loader = make_dataloaders(batch_size=batch_size, seed=69420, data_path=data_path, transforms=True, pin_memory=False)
         
     num_classes = len(train_loader.dataset.get_image_classes())
+    name_to_label = train_loader.dataset.get_name_to_label()
+    label_to_name = {v: k for k, v in name_to_label.items()}
 
     learning_rate = 1e-3
     milestones = [0.5 * num_epochs, 0.75 * num_epochs]
@@ -139,7 +141,7 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
                 wandb.log({f"{prefix}area under curve mean": result.auc.mean().item()})
                 for index, value in enumerate(result.auc):
                     writer.add_scalar(f"{prefix}area under curve, {index}", value.item(), epoch)
-                    wandb.log({f"{prefix}area under curve, {index}": value.item()})
+                    wandb.log({f"{prefix}area under curve, {label_to_name[index]}": value.item()})
 
 
 
