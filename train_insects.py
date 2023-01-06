@@ -37,13 +37,13 @@ def train_one_epoch(model, dataloader: DataLoader, loss_function: _Loss, optimiz
 
 
 class TestResult:
-    def __init__(self, test_loss: float, accuracy: float, auc: Tensor):
-        self.test_loss = test_loss
+    def __init__(self, loss: float, accuracy: float, auc: Tensor):
+        self.loss = loss
         self.acc = accuracy
         self.auc = auc
 
     def __str__(self):
-        return f"Test loss: {self.test_loss}, AUC: {self.auc}, ACC: {self.acc}"
+        return f"Test loss: {self.loss}, AUC: {self.auc}, ACC: {self.acc}"
 
 
 def test(model, dataloader: DataLoader, loss_function: _Loss, device: Device) -> TestResult:
@@ -112,7 +112,7 @@ def main():
             log_offset += len(train_loader)
 
             for prefix, result in zip(["train_", "test_"], [train_metrics, test_metrics]):
-                writer.add_scalar(f"{prefix}loss", result.test_loss, epoch)
+                writer.add_scalar(f"{prefix}loss", result.loss, epoch)
                 writer.add_scalar(f"{prefix}accuracy", result.acc, epoch)
                 writer.add_scalar(f"{prefix}area under curve mean", result.auc.mean().item(), epoch)
                 for index, value in enumerate(result.auc):
