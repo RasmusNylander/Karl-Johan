@@ -75,7 +75,7 @@ def main():
     num_epochs = 100
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    train_loader, test_loader = make_dataloaders(batch_size=batch_size, seed=69420, data_path=DATA_PATH)
+    train_loader, test_loader = make_dataloaders(batch_size=batch_size, seed=69420, data_path=DATA_PATH, transforms=True)
 
     learning_rate = 1e-3
     milestones = [0.5 * num_epochs, 0.75 * num_epochs]
