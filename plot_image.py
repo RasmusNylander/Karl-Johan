@@ -27,8 +27,9 @@ def plot_image(image: Tensor) -> None:
 
 def plot_volume(attention_map, image):
     X, Y, Z = np.mgrid[0:28, 0:28, 0:28]
-    attention_values = attention_map
     image_values = image
+    attention_values = attention_map
+    attention_values[attention_map < .3] = 0
     attention_volume = go.Volume(
         x=X.flatten(),
         y=Y.flatten(),
@@ -47,14 +48,13 @@ def plot_volume(attention_map, image):
         value=image_values.flatten(),
         isomin=0.0,
         isomax=1.0,
-        opacity=0.15,  # needs to be small to see through all surfaces
+        opacity=0.1,  # needs to be small to see through all surfaces
         surface_count=21,  # needs to be a large number for good volume rendering
         colorscale='gray'
     )
 
     fig = go.Figure(data=(image_volume, attention_volume))
     # fig = go.Figure(data=image_volume)
-    fig.update
     fig.update_xaxes(showticklabels=False)
     fig.update_yaxes(showticklabels=False)
 
