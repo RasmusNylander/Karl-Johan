@@ -1,14 +1,15 @@
+import torch
 from monai.data import DataLoader
+from torch import Tensor, device as Device
 from torch.nn.modules.loss import _Loss
 from torch.optim import Optimizer
-import torch
-from torch import Tensor, device as Device
 from torchmetrics.functional.classification import multiclass_auroc
 
 from main import accuracy
 
 
-def train_one_epoch(model, dataloader: DataLoader, loss_function: _Loss, optimizer: Optimizer, device: Device, writer, logging_offset: int) -> float:
+def train_one_epoch(model, dataloader: DataLoader, loss_function: _Loss, optimizer: Optimizer, device: Device,
+                    writer, logging_offset: int) -> float:
     model.train()
     num_training_batches = len(dataloader)
     train_loss: Tensor = torch.empty(num_training_batches, device=device)
@@ -25,6 +26,7 @@ def train_one_epoch(model, dataloader: DataLoader, loss_function: _Loss, optimiz
         optimizer.step()
 
     return sum(train_loss) / len(train_loss)
+
 
 class TestResult:
     def __init__(self, test_loss: float, accuracy: float, auc: Tensor):
