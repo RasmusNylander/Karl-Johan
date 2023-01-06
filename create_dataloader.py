@@ -76,6 +76,7 @@ def make_dataloaders(
     data_path="../datasets/sorted_downscaled",
     num_workers=4,
     pin_memory=True,
+    persistent_workers=True,
     as_rgb=False,
     transforms=False,
 ):
@@ -93,6 +94,7 @@ def make_dataloaders(
         worker_init_fn=np.random.seed(seed),
         num_workers=num_workers,
         pin_memory=pin_memory,
+        persistent_workers=persistent_workers
     )
     test_loader = DataLoader(
         test_set,
@@ -101,6 +103,7 @@ def make_dataloaders(
         worker_init_fn=np.random.seed(seed),
         num_workers=num_workers,
         pin_memory=pin_memory,
+        persistent_workers=persistent_workers
     )
 
     return train_loader, test_loader
