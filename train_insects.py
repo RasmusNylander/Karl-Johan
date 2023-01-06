@@ -49,7 +49,7 @@ class TestResult:
 
 
 def test(model, dataloader: DataLoader, loss_function: _Loss, device: Device) -> TestResult:
-    num_classes = NUM_CLASSES
+    num_classes = len(dataloader.dataset.get_image_classes())
     model.eval()
     with torch.no_grad():
         num_batches: int = len(dataloader)
@@ -73,7 +73,7 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     train_loader, test_loader = make_dataloaders(batch_size=batch_size, seed=69420, data_path=data_path, transforms=True)
-    NUM_CLASSES = len(train_loader.dataset.get_image_classes())
+    num_classes = len(train_loader.dataset.get_image_classes())
 
     learning_rate = 1e-3
     milestones = [0.5 * num_epochs, 0.75 * num_epochs]
@@ -87,12 +87,12 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
     }
 
     if model_pick == "resnet18":
-        model = ACSConverter(ResNet18(in_channels=1, num_classes=NUM_CLASSES)).to(device)
+        model = ACSConverter(ResNet18(in_channels=1, num_classes=num_classes)).to(device)
     elif model_pick == "resnet50":
-        model = ACSConverter(ResNet50(in_channels=1, num_classes=NUM_CLASSES)).to(device)
+        model = ACSConverter(ResNet50(in_channels=1, num_classes=num_classes)).to(device)
     elif model_pick == "convnext":
         model = convnext.convnext_small(pretrained=True)
-        model.head = torch.nn.Linear(768, NUM_CLASSES, bias=True)
+        model.head = torch.nn.Linear(768, num_classes, bias=True)
         model.to(device)
         
     wandb.watch(model)
