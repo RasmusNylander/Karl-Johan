@@ -12,9 +12,8 @@ from torch.utils.data import random_split
 import torchvision.transforms as transforms
 
 
-
 class dataset(Dataset):
-    def __init__(self, data_path, train, seed=42):
+    def __init__(self, data_path, train, seed=42, as_rgb=False):
         if train:
             self.image_paths = list(
                 pd.read_csv(data_path + "/train.csv", names=["files"], header=0).files
@@ -43,6 +42,9 @@ class dataset(Dataset):
         image = np.expand_dims(image, 0)
 
         X = torch.Tensor(image)
+        if as_rgb:
+            size = X.shape
+            X.expand([size[0], 3, size[2], size[3], size[4]])
 
         c = os.path.split(os.path.split(image_path)[0])[1]
         y = self.name_to_label[c]
@@ -68,13 +70,14 @@ def make_dataloaders(
     data_path="../datasets/sorted_downscaled",
     num_workers=4,
     pin_memory=True,
+    as_rgb=False,
 ):
     """
     Creates a train and test dataloader with a variable batch size and image shape.
     And using a weighted sampler for the training dataloader to have balanced mini-batches when training.
     """
-    train_set = dataset(data_path=data_path, train=True, seed=seed)
-    test_set = dataset(data_path=data_path, train=False, seed=seed)
+    train_set = dataset(data_path=data_path, train=True, seed=seed, as_rgb=as_rgb)
+    test_set = dataset(data_path=data_path, train=False, seed=seed, as_rgb=as_rgb)
 
     train_loader = DataLoader(
         train_set,
