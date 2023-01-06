@@ -79,7 +79,7 @@ def make_dataloaders(
     persistent_workers=True,
     as_rgb=False,
     transforms=False,
-):
+) -> tuple[DataLoader, DataLoader]:
     """
     Creates a train and test dataloader with a variable batch size and image shape.
     And using a weighted sampler for the training dataloader to have balanced mini-batches when training.
