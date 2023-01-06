@@ -9,11 +9,11 @@ from torch.utils.data import Dataset
 from torch.utils.data import Sampler
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
-import torchvision.transforms as transforms
+from torchvision.transforms import RandomRotation
 
 
 class dataset(Dataset):
-    def __init__(self, data_path, train, seed=42, as_rgb=False):
+    def __init__(self, data_path, train, seed=42, as_rgb=False, transforms = False):
         if train:
             self.image_paths = list(
                 pd.read_csv(data_path + "/train.csv", names=["files"], header=0).files
@@ -32,6 +32,8 @@ class dataset(Dataset):
         self.name_to_label = {c: id for id, c in enumerate(self.image_classes)}
         self.rng = np.random.default_rng(seed=seed)
         self.as_rgb = as_rgb
+        self.transforms = transforms
+        self.rot = RandomRotation(180)
 
     def __len__(self):
         return len(self.image_paths)  # len(self.data)
@@ -43,9 +45,12 @@ class dataset(Dataset):
         image = np.expand_dims(image, 0)
 
         X = torch.Tensor(image)
+        if self.transforms:
+            X = self.rot(X)
         if self.as_rgb:
             size = X.shape
             X = X.expand([3, size[1], size[2], size[3]])
+        
 
         c = os.path.split(os.path.split(image_path)[0])[1]
         y = self.name_to_label[c]
@@ -72,12 +77,13 @@ def make_dataloaders(
     num_workers=4,
     pin_memory=True,
     as_rgb=False,
+    transforms=False,
 ):
     """
     Creates a train and test dataloader with a variable batch size and image shape.
     And using a weighted sampler for the training dataloader to have balanced mini-batches when training.
     """
-    train_set = dataset(data_path=data_path, train=True, seed=seed, as_rgb=as_rgb)
+    train_set = dataset(data_path=data_path, train=True, seed=seed, as_rgb=as_rgb, transforms=transforms)
     test_set = dataset(data_path=data_path, train=False, seed=seed, as_rgb=as_rgb)
 
     train_loader = DataLoader(
