@@ -12,6 +12,7 @@ from torch.utils.data import random_split
 import torchvision.transforms as transforms
 
 
+
 class dataset(Dataset):
     def __init__(self, data_path, train, seed=42):
         if train:
@@ -45,6 +46,9 @@ class dataset(Dataset):
 
         c = os.path.split(os.path.split(image_path)[0])[1]
         y = self.name_to_label[c]
+        temp = torch.zeros(len(self.image_classes))
+        temp[y] = 1
+        y = temp
 
         return X, y
 
