@@ -1,27 +1,32 @@
 import os
+from enum import Enum, auto
+
 import cv2
 import glob
 import torch
 import numpy as np
 import pandas as pd
 from skimage import io
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset as TorchDataset
 from torch.utils.data import Sampler
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
 from torchvision.transforms import RandomRotation
 
 
-class Dataset(Dataset):
-    def __init__(self, data_path, train, seed=42, as_rgb=False, transforms = False):
-        if train:
-            self.image_paths = list(
-                pd.read_csv(data_path + "/train.csv", names=["files"], header=0).files
-            )
-        else:
-            self.image_paths = list(
-                pd.read_csv(data_path + "/test.csv", names=["files"], header=0).files
-            )
+class DatasetType(Enum):
+    Train = auto()
+    # Validation = auto()
+    Test = auto()
+
+
+class Dataset(TorchDataset):
+    def __init__(self, data_path, type: DatasetType, seed=42, as_rgb=False, transforms=False):
+        match type:
+            case DatasetType.Train:
+                self.image_paths = pd.read_csv(data_path + "/train.csv", names=["files"], header=0).files.tolist()
+            case DatasetType.Test:
+                self.image_paths = pd.read_csv(data_path + "/test.csv", names=["files"], header=0).files.tolist()
 
         self.image_paths = [f"{data_path}/{path}" for path in self.image_paths]
 
@@ -86,8 +91,8 @@ def make_dataloaders(
     Creates a train and test dataloader with a variable batch size and image shape.
     And using a weighted sampler for the training dataloader to have balanced mini-batches when training.
     """
-    train_set = Dataset(data_path=data_path, train=True, seed=seed, as_rgb=as_rgb, transforms=transforms)
-    test_set = Dataset(data_path=data_path, train=False, seed=seed, as_rgb=as_rgb)
+    train_set = Dataset(data_path=data_path, type=DatasetType.Train, seed=seed, as_rgb=as_rgb, transforms=transforms)
+    test_set = Dataset(data_path=data_path, type=DatasetType.Test, seed=seed, as_rgb=as_rgb)
 
     train_loader = DataLoader(
         train_set,
