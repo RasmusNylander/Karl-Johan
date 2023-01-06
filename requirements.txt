@@ -4,6 +4,7 @@ monai
 medmnist
 torch
 torchvision
+torchmetrics
 pandas
 jupyterlab
 matplotlib
