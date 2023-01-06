@@ -101,31 +101,31 @@ def main():
     best_model_state = model.state_dict().copy()
 
     log_offset = 0
-    for epoch in trange(num_epochs):
-        train_loss = train_one_epoch(model, train_loader, loss_function, optimizer, device, writer, log_offset)
+    with trange(num_epochs, unit="epoch", desc="Epoch 0 – Best AUC: 0 – Best ACC: 0") as progress_bar:
+        for epoch in progress_bar:
+            train_loss = train_one_epoch(model, train_loader, loss_function, optimizer, device, writer, log_offset)
 
-        train_metrics = test(model, train_loader,  loss_function, device)
-        test_metrics = test(model, train_loader,  loss_function, device)
+            train_metrics = test(model, train_loader,  loss_function, device)
+            test_metrics = test(model, train_loader,  loss_function, device)
 
-        scheduler.step()
-        log_offset += len(train_loader)
+            scheduler.step()
+            log_offset += len(train_loader)
 
-        for prefix, result in zip(["train_", "test_"], [train_metrics, test_metrics]):
-            writer.add_scalar(f"{prefix}loss", result.test_loss, epoch)
-            writer.add_scalar(f"{prefix}accuracy", result.acc, epoch)
-            writer.add_scalar(f"{prefix}area under curve mean", result.auc.mean().item(), epoch)
-            for index, value in enumerate(result.auc):
-                writer.add_scalar(f"{prefix}area under curve, {index}", value.item(), epoch)
+            for prefix, result in zip(["train_", "test_"], [train_metrics, test_metrics]):
+                writer.add_scalar(f"{prefix}loss", result.test_loss, epoch)
+                writer.add_scalar(f"{prefix}accuracy", result.acc, epoch)
+                writer.add_scalar(f"{prefix}area under curve mean", result.auc.mean().item(), epoch)
+                for index, value in enumerate(result.auc):
+                    writer.add_scalar(f"{prefix}area under curve, {index}", value.item(), epoch)
 
 
-        cur_auc = test_metrics.auc.mean().item() # TODO: Should be validation data
-        if cur_auc > best_auc:
-            best_epoch = epoch
-            best_auc = cur_auc
-            best_model_state = model.state_dict().copy()
+            cur_auc = test_metrics.auc.mean().item() # TODO: Should be validation data
+            if cur_auc > best_auc:
+                best_epoch = epoch
+                best_auc = cur_auc
+                best_model_state = model.state_dict().copy()
 
-            print("current best auc:", best_auc)
-            print("current best epoch", best_epoch)
+                progress_bar.set_description(f"Epoch {epoch} – Best AUC: {best_auc:.5} – Best ACC: {test_metrics.acc:.5}")
 
     state = {
         "net": best_model_state,
