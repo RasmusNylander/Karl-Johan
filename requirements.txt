@@ -37,3 +37,4 @@ scipy
 SimpleITK
 six
 plotly
+wandb

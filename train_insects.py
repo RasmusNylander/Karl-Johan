@@ -1,8 +1,9 @@
 import os
 import time
-
+import argparse
 import torch
 from acsconv.converters import ACSConverter
+import acsconv.models.convnext as convnext
 from monai.data import DataLoader
 from monai.handlers.tensorboard_handlers import SummaryWriter
 from torch import Tensor, device as Device
@@ -14,6 +15,7 @@ from tqdm import trange
 from create_dataloader import make_dataloaders
 from experiments.MedMNIST3D.models import ResNet18, ResNet50
 from main import accuracy
+import wandb
 
 
 def train_one_epoch(model, dataloader: DataLoader, loss_function: _Loss, optimizer: Optimizer, device: Device,
@@ -66,23 +68,35 @@ def test(model, dataloader: DataLoader, loss_function: _Loss, device: Device) ->
         return TestResult(loss.mean().item(), accuracy_score.mean().item(), area_under_curve.mean(dim=1))
 
 
-DATA_PATH = "./datasets/sorted_downscaled"
-OUTPUT_ROOT = "./output"
-LOG_DIR = f"{OUTPUT_ROOT}/logs"
-NUM_CLASSES = 10
-def main():
-    batch_size = 32
-    num_epochs = 100
+
+def main(DATA_PATH, OUTPUT_ROOT, model_pick, batch_size, num_epochs):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     train_loader, test_loader = make_dataloaders(batch_size=batch_size, seed=69420, data_path=DATA_PATH, transforms=True)
+    NUM_CLASSES = len(train_loader.dataset.get_image_classes())
 
     learning_rate = 1e-3
     milestones = [0.5 * num_epochs, 0.75 * num_epochs]
     gamma = 0.1
+    
+    wandb.config = {
+      "learning_rate": learning_rate,
+      "epochs": num_epochs,
+      "batch_size": batch_size,
+      "model": model_pick
+    }
 
-    model = ACSConverter(ResNet18(in_channels=1, num_classes=NUM_CLASSES)).to(device)
-
+    if model_pick == "resnet18":
+        model = ACSConverter(ResNet18(in_channels=1, num_classes=NUM_CLASSES)).to(device)
+    elif model_pick == "resnet50":
+        model = ACSConverter(ResNet50(in_channels=1, num_classes=NUM_CLASSES)).to(device)
+    elif model_pick == "convnext":
+        model = convnext.convnext_small(pretrained=True)
+        model.head = nn.Linear(768, NUM_CLASSES, bias=True)
+        model.to(device)
+        
+    wandb.watch(model)
+    
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.01)
     scheduler = torch.optim.lr_scheduler.MultiStepLR(
         optimizer, milestones=milestones, gamma=gamma
@@ -111,12 +125,18 @@ def main():
             scheduler.step()
             log_offset += len(train_loader)
 
+
             for prefix, result in zip(["train_", "test_"], [train_metrics, test_metrics]):
                 writer.add_scalar(f"{prefix}loss", result.loss, epoch)
+                wandb.log({f"{prefix}loss": result.loss})
                 writer.add_scalar(f"{prefix}accuracy", result.acc, epoch)
+                wandb.log({f"{prefix}accuracy": result.acc})
                 writer.add_scalar(f"{prefix}area under curve mean", result.auc.mean().item(), epoch)
+                wandb.log({f"{prefix}area under curve mean": result.auc.mean().item()})
                 for index, value in enumerate(result.auc):
                     writer.add_scalar(f"{prefix}area under curve, {index}", value.item(), epoch)
+                    wandb.log(f"{prefix}area under curve, {index}", value.item(), epoch)
+
 
 
             cur_auc = test_metrics.auc.mean().item() # TODO: Should be validation data
@@ -146,8 +166,25 @@ def main():
     print(log)
     with open(os.path.join(output_root, "log.txt"), "a") as f:
         f.write(log)
+        
 
     writer.close()
 
 if __name__ == "__main__":
-    main()
+    wandb.init(project="3d-insect-classification", entity="ml_dtu")
+    parser = argparse.ArgumentParser(description="RUN model on insect data")
+
+    parser.add_argument("--data_path", default="./datasets/sorted_downscaled", type=str)
+    parser.add_argument("--output_path", default="./output", type=str)
+    parser.add_argument("--model", default="resnet18", type=str)
+    parser.add_argument("--batch_size", default="16", type=int)
+    parser.add_argument("--num_epochs", default="100", type=int)
+    
+    args = parser.parse_args()
+    DATA_PATH = args.data_path
+    OUTPUT_ROOT = args.output_path
+    model = args.model
+    batch_size = args.batch_size
+    num_epochs = args.num_epochs
+
+    main(DATA_PATH, OUTPUT_ROOT, model, batch_size, num_epochs)
