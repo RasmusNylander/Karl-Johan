@@ -123,6 +123,7 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
     log_offset = 0
     with trange(num_epochs, unit="epoch", desc="Epoch 0 – Best AUC: 0 – Best ACC: 0") as progress_bar:
         for epoch in progress_bar:
+            wandb.log({"Epoch": epoch})
             train_loss = train_one_epoch(model, train_loader, loss_function, optimizer, device, writer, log_offset)
 
             train_metrics = test(model, train_loader,  loss_function, device)
