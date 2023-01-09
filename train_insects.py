@@ -144,14 +144,14 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
             wandb.log({"Epoch": epoch})
             train_loss = train_one_epoch(model, train_loader, loss_function, optimizer, device, writer, log_offset)
 
-            train_metrics = test(model, train_loader,  loss_function, device)
-            test_metrics = test(model, test_loader,  loss_function, device)
+            train_metrics = test(model, train_loader, loss_function, device)
+            validation_metrics = test(model, validation_loader, loss_function, device)
 
             scheduler.step()
             log_offset += len(train_loader)
 
 
-            for prefix, result in zip(["train_", "test_"], [train_metrics, test_metrics]):
+            for prefix, result in zip(["train_", "test_"], [train_metrics, validation_metrics]):
                 writer.add_scalar(f"{prefix}loss", result.loss, epoch)
                 wandb.log({f"{prefix}loss": result.loss})
                 writer.add_scalar(f"{prefix}accuracy", result.acc, epoch)
@@ -164,13 +164,13 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
 
 
 
-            cur_auc = test_metrics.auc.mean().item() # TODO: Should be validation data
+            cur_auc = validation_metrics.auc.mean().item()
             if cur_auc > best_auc:
                 best_epoch = epoch
                 best_auc = cur_auc
                 best_model_state = model.state_dict().copy()
 
-                progress_bar.set_description(f"Epoch {epoch} – Best AUC: {best_auc:.5} – Best ACC: {test_metrics.acc:.5}")
+                progress_bar.set_description(f"Epoch {epoch} – Best AUC: {best_auc:.5} – Best ACC: {validation_metrics.acc:.5}")
 
     state = {
         "net": best_model_state,
@@ -182,12 +182,14 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
     model.state_dict = best_model_state
 
     train_metrics = test(model, train_loader,  loss_function, device)
+    validation_metrics = test(model, validation_loader, loss_function, device)
     test_metrics = test(model, test_loader,  loss_function, device)
 
     train_log = "train  auc: %.5f  acc: %.5f\n" % (train_metrics.auc.mean(), train_metrics.acc)
+    validation_log = f"validation  auc: {validation_metrics.auc.mean():.5f}  acc: {validation_metrics.acc:.5f}\n"
     test_log = "test  auc: %.5f  acc: %.5f\n" % (test_metrics.auc.mean(), test_metrics.acc)
 
-    log = f"{train_log}\n{test_log}\n"
+    log = f"{train_log}\n{validation_log}\n{test_log}\n"
     print(log)
     with open(os.path.join(output_root, "log.txt"), "a") as f:
         f.write(log)
