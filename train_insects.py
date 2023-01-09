@@ -15,19 +15,6 @@ from monai.networks.nets import densenet121, SEResNet50, ResNet
 from main import accuracy
 import wandb
 
-class wandb:
-    def init(*args, **kwargs):
-        pass
-
-    config = {}
-
-    def watch(*args, **kwargs):
-        pass
-
-    def log(*args, **kwargs):
-        pass
-
-
 
 def train_one_epoch(model, dataloader: DataLoader, loss_function: _Loss, optimizer: Optimizer, device: Device,
                     writer, logging_offset: int) -> float:
