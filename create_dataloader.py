@@ -16,17 +16,21 @@ from torchvision.transforms import RandomRotation
 
 class DatasetType(Enum):
     Train = auto()
-    # Validation = auto()
+    Validation = auto()
     Test = auto()
 
 
 class Dataset(TorchDataset):
     def __init__(self, data_path, type: DatasetType, seed=42, as_rgb=False, transforms=False):
+        assert len(DatasetType) == 3
         match type:
             case DatasetType.Train:
                 self.image_paths = pd.read_csv(data_path + "/train.csv", names=["files"], header=0).files.tolist()
             case DatasetType.Test:
                 self.image_paths = pd.read_csv(data_path + "/test.csv", names=["files"], header=0).files.tolist()
+            case DatasetType.Validation:
+                self.image_paths = pd.read_csv(data_path + "/validation.csv", names=["files"], header=0).files.tolist()
+
 
         self.image_paths = [f"{data_path}/{path}" for path in self.image_paths]
 
