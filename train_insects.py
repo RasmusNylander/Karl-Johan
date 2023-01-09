@@ -84,11 +84,16 @@ def test(model, dataloader: DataLoader, loss_function: _Loss, device: Device) ->
 
 def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    
-    if model_pick == "convnext":
-        train_loader, test_loader = make_dataloaders(batch_size=batch_size, seed=69420, data_path=data_path, transforms=True, pin_memory=False, as_rgb=True)
-    else:
-        train_loader, test_loader = make_dataloaders(batch_size=batch_size, seed=69420, data_path=data_path, transforms=True, pin_memory=False)
+
+    as_rgb: bool = model_pick == "convnext"
+    train_loader, validation_loader, test_loader = make_dataloaders(
+        batch_size=batch_size,
+        seed=69420,
+        data_path=data_path,
+        transforms=True,
+        pin_memory=False,
+        as_rgb=as_rgb
+    )
         
     num_classes = len(train_loader.dataset.get_image_classes())
     name_to_label = train_loader.dataset.get_name_to_label()

@@ -1,16 +1,13 @@
 import os
 from enum import Enum, auto
 
-import cv2
 import glob
 import torch
 import numpy as np
 import pandas as pd
 from skimage import io
 from torch.utils.data import Dataset as TorchDataset
-from torch.utils.data import Sampler
 from torch.utils.data import DataLoader
-from torch.utils.data import random_split
 from torchvision.transforms import RandomRotation
 
 
@@ -90,18 +87,28 @@ def make_dataloaders(
     persistent_workers=True,
     as_rgb=False,
     transforms=False,
-) -> tuple[DataLoader, DataLoader]:
+) -> tuple[DataLoader, DataLoader, DataLoader]:
     """
     Creates a train and test dataloader with a variable batch size and image shape.
     And using a weighted sampler for the training dataloader to have balanced mini-batches when training.
     """
     train_set = Dataset(data_path=data_path, type=DatasetType.Train, seed=seed, as_rgb=as_rgb, transforms=transforms)
+    validation_set = Dataset(data_path=data_path, type=DatasetType.Validation, seed=seed, as_rgb=as_rgb)
     test_set = Dataset(data_path=data_path, type=DatasetType.Test, seed=seed, as_rgb=as_rgb)
 
     train_loader = DataLoader(
         train_set,
         batch_size=batch_size,
         shuffle=True,
+        worker_init_fn=np.random.seed(seed),
+        num_workers=num_workers,
+        pin_memory=pin_memory,
+        persistent_workers=persistent_workers
+    )
+    validation_loader = DataLoader(
+        validation_set,
+        batch_size=batch_size,
+        shuffle=False,
         worker_init_fn=np.random.seed(seed),
         num_workers=num_workers,
         pin_memory=pin_memory,
@@ -117,4 +124,4 @@ def make_dataloaders(
         persistent_workers=persistent_workers
     )
 
-    return train_loader, test_loader
+    return train_loader, validation_loader, test_loader
