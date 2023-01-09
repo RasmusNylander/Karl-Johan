@@ -25,8 +25,9 @@ if error:
     raise ValueError(error.strip())
 
 original_csv = pd.read_csv(CSV_PATH)
-# TODO: Consider sampling class-wise
-csv_subset = original_csv.sample(frac=SAMPLE_PERCENTAGE, random_state=SEED)
+labels = original_csv['0'].map(lambda x: x[0:2])
+grouped = original_csv.groupby(labels.values)
+csv_subset = grouped.sample(frac=SAMPLE_PERCENTAGE, random_state=SEED)
 difference = original_csv.index.difference(csv_subset.index)
 original_without_subset = original_csv.loc[difference]
 csv_subset.to_csv(SUBSET_PATH, index=False)
