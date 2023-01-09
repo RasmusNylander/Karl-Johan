@@ -12,7 +12,7 @@ from tqdm import trange
 
 from create_dataloader import make_dataloaders
 from monai.networks.nets import densenet121, SEResNet50, ResNet
-from main import accuracy
+from accuracy import accuracy
 import wandb
 
 
@@ -163,7 +163,7 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
 
                 progress_bar.set_description(f"Epoch {epoch} – Best AUC: {best_auc:.5} – Best ACC: {validation_metrics.acc:.5}")
 
-    
+
 
     model.state_dict = best_model_state
 

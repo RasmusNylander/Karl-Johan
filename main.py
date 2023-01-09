@@ -11,14 +11,9 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm, trange
 
 from DummyModel import DummyModel
+from accuracy import accuracy
 
 NUMBER_OF_CLASSES = 11
-
-
-def accuracy(predictions: Tensor, labels: Tensor):
-    return (
-        predictions.argmax(dim=1) == labels.argmax(dim=1)
-    ).sum().item() / labels.shape[0]
 
 
 class TestResult:
