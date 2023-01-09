@@ -2,8 +2,6 @@ import os
 import time
 import argparse
 import torch
-from acsconv.converters import ACSConverter
-import acsconv.models.convnext as convnext
 from monai.data import DataLoader
 from monai.handlers.tensorboard_handlers import SummaryWriter
 from torch import Tensor, device as Device
@@ -13,7 +11,7 @@ from torchmetrics.functional.classification import multiclass_auroc
 from tqdm import trange
 
 from create_dataloader import make_dataloaders
-from experiments.MedMNIST3D.models import ResNet18, ResNet50
+from monai.networks.nets import densenet121, SEResNet50, ResNet
 from main import accuracy
 import wandb
 
@@ -110,14 +108,14 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
       "model": model_pick
     }
 
-    if model_pick == "resnet18":
-        model = ACSConverter(ResNet18(in_channels=1, num_classes=num_classes)).to(device)
-    elif model_pick == "resnet50":
-        model = ACSConverter(ResNet50(in_channels=1, num_classes=num_classes)).to(device)
-    elif model_pick == "convnext":
-        model = convnext.convnext_small(pretrained=False)
-        model.head = torch.nn.Linear(768, num_classes, bias=True)
-        model.to(device)
+    if model_pick == "ResNet18":
+        model = ResNet(block = "basic", layers=[2, 2, 2, 2], block_inplanes=[64,128,256,512], num_classes=10, n_input_channels=1).to(device) #resnet18
+    elif model_pick == "ResNet50":
+        model = ResNet(block = "bottleneck", layers=[3, 4, 6, 3], block_inplanes=[64,128,256,512], num_classes=10, n_input_channels=1).to(device) #resnet50
+    elif model_pick == "DenseNet":
+        model = densenet121(spatial_dims=3, in_channels= 1, out_channels=10).to(device)
+    elif model_pick == "SEResNet50":
+        model = SEResNet50(spatial_dims=3, in_channels= 1, num_classes=10)
         
     wandb.watch(model)
     
@@ -127,8 +125,8 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
     )
     loss_function = torch.nn.CrossEntropyLoss()
 
-
-    output_root = os.path.join(output_path, time.strftime("%y%m%d_%H%M%S"))
+    t = time.strftime("%y%m%d_%H%M%S")
+    output_root = os.path.join(output_path, f'{model_pick}_{t}')
     if not os.path.exists(output_root):
         os.makedirs(output_root)
 
@@ -169,15 +167,16 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
                 best_epoch = epoch
                 best_auc = cur_auc
                 best_model_state = model.state_dict().copy()
+                state = {
+                    "net": best_model_state,
+                }
+
+                path = os.path.join(output_root, "best_model.pth")
+                torch.save(state, path)
 
                 progress_bar.set_description(f"Epoch {epoch} – Best AUC: {best_auc:.5} – Best ACC: {validation_metrics.acc:.5}")
 
-    state = {
-        "net": best_model_state,
-    }
-
-    path = os.path.join(output_root, "best_model.pth")
-    torch.save(state, path)
+    
 
     model.state_dict = best_model_state
 
@@ -201,8 +200,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="RUN model on insect data")
     parser.add_argument("--data_path", default="./datasets/sorted_downscaled", type=str)
     parser.add_argument("--output_path", default="./output", type=str)
-    parser.add_argument("--model", default="resnet18", type=str)
-    parser.add_argument("--batch_size", default="16", type=int)
+    parser.add_argument("--model", default="ResNet18", type=str, help='ResNet18, ResNet50, DenseNet, SEResNet50')
+    parser.add_argument("--batch_size", default="8", type=int)
     parser.add_argument("--num_epochs", default="100", type=int)
     
     args = parser.parse_args()
