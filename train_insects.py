@@ -102,7 +102,7 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
     elif model_pick == "DenseNet":
         model = densenet121(spatial_dims=3, in_channels= 1, out_channels=10).to(device)
     elif model_pick == "SEResNet50":
-        model = SEResNet50(spatial_dims=3, in_channels= 1, num_classes=10)
+        model = SEResNet50(spatial_dims=3, in_channels= 1, num_classes=10).to(device)
         
     wandb.watch(model)
     
