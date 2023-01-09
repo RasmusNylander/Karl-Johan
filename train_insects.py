@@ -115,7 +115,7 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
     elif model_pick == "resnet50":
         model = ACSConverter(ResNet50(in_channels=1, num_classes=num_classes)).to(device)
     elif model_pick == "convnext":
-        model = convnext.convnext_small(pretrained=True)
+        model = convnext.convnext_small(pretrained=False)
         model.head = torch.nn.Linear(768, num_classes, bias=True)
         model.to(device)
         
