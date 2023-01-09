@@ -25,6 +25,7 @@ if error:
     raise ValueError(error.strip())
 
 original_csv = pd.read_csv(CSV_PATH)
+# TODO: Consider sampling class-wise
 csv_subset = original_csv.sample(frac=SAMPLE_PERCENTAGE, random_state=SEED)
 difference = original_csv.index.difference(csv_subset.index)
 original_without_subset = original_csv.loc[difference]
