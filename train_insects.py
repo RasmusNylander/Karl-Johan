@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import argparse
 import torch
@@ -125,10 +126,8 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs, s
     if not os.path.exists(output_root):
         os.makedirs(output_root)
 
-    best_acc = 0
-    best_epoch = 0
+    best_loss_abs = sys.float_info.max
     best_model_state = model.state_dict().copy()
-
     log_offset = 0
     with trange(num_epochs, unit="epoch", desc="Epoch 0 – Best AUC: 0 – Best ACC: 0") as progress_bar:
         for epoch in progress_bar:
@@ -148,10 +147,8 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs, s
                 for index, value in enumerate(result.auc):
                     wandb.log({f"{prefix}area under curve, {label_to_name[index]}": value.item()})
 
-            cur_acc = validation_metrics.acc
-            if cur_acc > best_acc:
-                best_epoch = epoch
-                best_acc = cur_acc
+            if abs(validation_metrics.loss) < best_loss_abs:
+                best_loss_abs = abs(validation_metrics.loss)
                 best_model_state = model.state_dict().copy()
                 state = {
                     "net": best_model_state,
@@ -160,7 +157,7 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs, s
                 path = os.path.join(output_root, "best_model.pth")
                 torch.save(state, path)
 
-                progress_bar.set_description(f"Epoch {epoch} – Best AUC: {validation_metrics.auc.mean().item():.5} – Best ACC: {best_acc:.5}")
+                progress_bar.set_description(f"Epoch {epoch} – Best AUC: {validation_metrics.auc.mean().item():.5} – Best ACC: {validation_metrics.acc:.5}")
 
 
 
