@@ -100,7 +100,7 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs, s
       "batch_size": batch_size,
       "model": model_pick,
       "scale":scale
-    }
+    })
     
 
     if model_pick == "ResNet18":
