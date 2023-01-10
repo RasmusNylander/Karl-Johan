@@ -16,8 +16,7 @@ from accuracy import accuracy
 import wandb
 
 
-def train_one_epoch(model, dataloader: DataLoader, loss_function: _Loss, optimizer: Optimizer, device: Device,
-                    writer, logging_offset: int) -> float:
+def train_one_epoch(model, dataloader: DataLoader, loss_function: _Loss, optimizer: Optimizer, device: Device) -> float:
     model.train()
     num_training_batches = len(dataloader)
     train_loss: Tensor = torch.empty(num_training_batches, device=device)
@@ -28,7 +27,6 @@ def train_one_epoch(model, dataloader: DataLoader, loss_function: _Loss, optimiz
 
         loss = loss_function(outputs, targets)
         train_loss[batch_index] = loss.item()
-        writer.add_scalar('train_loss_logs', loss.item(), logging_offset + batch_index)
 
         loss.backward()
         optimizer.step()
@@ -96,9 +94,9 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
     }
 
     if model_pick == "ResNet18":
-        model = ResNet(block = "basic", layers=[2, 2, 2, 2], block_inplanes=[64,128,256,512], num_classes=10, n_input_channels=1).to(device) #resnet18
+        model = ResNet(block="basic", layers=[2, 2, 2, 2], block_inplanes=[64,128,256,512], num_classes=10, n_input_channels=1).to(device) #resnet18
     elif model_pick == "ResNet50":
-        model = ResNet(block = "bottleneck", layers=[3, 4, 6, 3], block_inplanes=[64,128,256,512], num_classes=10, n_input_channels=1).to(device) #resnet50
+        model = ResNet(block="bottleneck", layers=[3, 4, 6, 3], block_inplanes=[64,128,256,512], num_classes=10, n_input_channels=1).to(device) #resnet50
     elif model_pick == "DenseNet":
         model = densenet121(spatial_dims=3, in_channels= 1, out_channels=10).to(device)
     elif model_pick == "SEResNet50":
@@ -117,8 +115,6 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
     if not os.path.exists(output_root):
         os.makedirs(output_root)
 
-    writer: SummaryWriter = SummaryWriter(log_dir=os.path.join(output_root, "Tensorboard_Results"))
-
     best_auc = 0
     best_epoch = 0
     best_model_state = model.state_dict().copy()
@@ -127,7 +123,7 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
     with trange(num_epochs, unit="epoch", desc="Epoch 0 – Best AUC: 0 – Best ACC: 0") as progress_bar:
         for epoch in progress_bar:
             wandb.log({"Epoch": epoch})
-            train_loss = train_one_epoch(model, train_loader, loss_function, optimizer, device, writer, log_offset)
+            train_loss = train_one_epoch(model, train_loader, loss_function, optimizer, device)
 
             train_metrics = test(model, train_loader, loss_function, device)
             validation_metrics = test(model, validation_loader, loss_function, device)
@@ -135,19 +131,12 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
             scheduler.step()
             log_offset += len(train_loader)
 
-
             for prefix, result in zip(["train_", "test_"], [train_metrics, validation_metrics]):
-                writer.add_scalar(f"{prefix}loss", result.loss, epoch)
                 wandb.log({f"{prefix}loss": result.loss})
-                writer.add_scalar(f"{prefix}accuracy", result.acc, epoch)
                 wandb.log({f"{prefix}accuracy": result.acc})
-                writer.add_scalar(f"{prefix}area under curve mean", result.auc.mean().item(), epoch)
                 wandb.log({f"{prefix}area under curve mean": result.auc.mean().item()})
                 for index, value in enumerate(result.auc):
-                    writer.add_scalar(f"{prefix}area under curve, {index}", value.item(), epoch)
                     wandb.log({f"{prefix}area under curve, {label_to_name[index]}": value.item()})
-
-
 
             cur_auc = validation_metrics.auc.mean().item()
             if cur_auc > best_auc:
@@ -179,9 +168,7 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
     print(log)
     with open(os.path.join(output_root, "log.txt"), "a") as f:
         f.write(log)
-        
 
-    writer.close()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="RUN model on insect data")
@@ -198,6 +185,6 @@ if __name__ == "__main__":
     batch_size = args.batch_size
     num_epochs = args.num_epochs
     
-    wandb.init(project="3d-insect-classification", entity="ml_dtu",name=model)
+    wandb.init(project="3d-insect-classification", entity="ml_dtu", name=model)
 
     main(data_path, output_path, model, batch_size, num_epochs)
