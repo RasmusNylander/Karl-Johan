@@ -95,6 +95,13 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs, s
       "scale":scale
     })
     
+    wandb.log({
+      "epochs": num_epochs,
+      "batch_size": batch_size,
+      "model": model_pick,
+      "scale":scale
+    }
+    
 
     if model_pick == "ResNet18":
         model = ResNet(block="basic", layers=[2, 2, 2, 2], block_inplanes=[32,64,128,256], num_classes=10, n_input_channels=1).to(device) #resnet18
