@@ -50,7 +50,7 @@ class Dataset(TorchDataset):
         image_path = self.image_paths[idx]
 
         image = io.imread(image_path)
-        if scale is not None:
+        if self.scale is not None:
             image = zoom(image,self.scale)
         
         # image = image[::8, ::8, ::8]
