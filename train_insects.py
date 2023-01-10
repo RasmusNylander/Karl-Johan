@@ -14,6 +14,7 @@ from tqdm import trange
 from create_dataloader import make_dataloaders
 from accuracy import accuracy
 import wandb
+from logging import init_logging, log_test_result
 from model_picker import ModelType, get_model
 
 
@@ -64,7 +65,6 @@ def test(model, dataloader: DataLoader, loss_function: _Loss, device: Device) ->
 
         return TestResult(loss.mean().item(), accuracy_score.mean().item(), area_under_curve.mean(dim=1))
 
-
 def main(data_path: str, output_path: str, model_pick: ModelType, batch_size, num_epochs, scale, enable_logging: bool, wandb_prefix: str):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -95,20 +95,7 @@ def main(data_path: str, output_path: str, model_pick: ModelType, batch_size, nu
     loss_function = torch.nn.CrossEntropyLoss()
 
     if enable_logging:
-        wandb.init(
-            project="3d-insect-classification",
-            name=f"{wandb_prefix} {model_name}",
-            entity="ml_dtu",
-            config={
-              "learning rate": learning_rate,
-              "number of epochs": num_epochs,
-              "batch size": batch_size,
-              "model": model_pick.name,
-              "scale": scale,
-              "optimiser": "Adam"
-            })
-        wandb.watch(model)
-
+        init_logging(f"{wandb_prefix} {model_name}", learning_rate, num_epochs, batch_size, model_pick, scale, model)
 
     t = time.strftime("%y%m%d_%H%M%S")
     output_root = os.path.join(output_path, f'{model_pick}_{t}')
@@ -129,13 +116,8 @@ def main(data_path: str, output_path: str, model_pick: ModelType, batch_size, nu
             log_offset += len(train_loader)
 
             if enable_logging:
-                wandb.log({"Epoch": epoch})
-                for prefix, result in zip(["(train) ", "(validation) "], [train_metrics, validation_metrics]):
-                    wandb.log({f"{prefix}loss": result.loss})
-                    wandb.log({f"{prefix}accuracy": result.acc})
-                    wandb.log({f"{prefix}area under curve mean": result.auc.mean().item()})
-                    for index, value in enumerate(result.auc):
-                        wandb.log({f"{prefix}area under curve, {label_to_name[index]}": value.item()})
+                log_test_result(train_metrics, "(train) ")
+                log_test_result(validation_metrics, "(validation) ")
 
             if abs(validation_metrics.loss) < best_loss_abs:
                 best_loss_abs = abs(validation_metrics.loss)
@@ -162,7 +144,10 @@ def main(data_path: str, output_path: str, model_pick: ModelType, batch_size, nu
     test_log = "test  auc: %.5f  acc: %.5f\n" % (test_metrics.auc.mean(), test_metrics.acc)
 
     if enable_logging:
-        wandb.log({"test accuracy":test_metrics.acc,"test area under curve mean":test_metrics.auc.mean()})
+        wandb.log({
+            "test accuracy": test_metrics.acc,
+            "test area under curve mean":test_metrics.auc.mean()
+        })
 
     log = f"{train_log}\n{validation_log}\n{test_log}\n"
     print(log)
