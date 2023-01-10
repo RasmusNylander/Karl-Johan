@@ -9,6 +9,7 @@ from skimage import io
 from torch.utils.data import Dataset as TorchDataset
 from torch.utils.data import DataLoader
 from torchvision.transforms import RandomRotation
+from scipy.ndimage import zoom
 
 
 class DatasetType(Enum):
@@ -18,7 +19,7 @@ class DatasetType(Enum):
 
 
 class Dataset(TorchDataset):
-    def __init__(self, data_path, type: DatasetType, seed=42, as_rgb=False, transforms=False):
+    def __init__(self, data_path, type: DatasetType, seed=42, as_rgb=False, transforms=False, scale=None):
         assert len(DatasetType) == 3
         match type:
             case DatasetType.Train:
@@ -40,6 +41,7 @@ class Dataset(TorchDataset):
         self.as_rgb = as_rgb
         self.transforms = transforms
         self.rot = RandomRotation(180)
+        self.scale = scale
 
     def __len__(self):
         return len(self.image_paths)  # len(self.data)
@@ -48,10 +50,13 @@ class Dataset(TorchDataset):
         image_path = self.image_paths[idx]
 
         image = io.imread(image_path)
+        if scale is not None:
+            image = zoom(image,self.scale)
+        
         # image = image[::8, ::8, ::8]
         # image = image[::16, ::16, ::16]
         image = np.expand_dims(image, 0)
-
+        
         X = torch.Tensor(image)
         if self.transforms:
             X = self.rot(X)
@@ -87,14 +92,15 @@ def make_dataloaders(
     persistent_workers=True,
     as_rgb=False,
     transforms=False,
+    scale=None,
 ) -> tuple[DataLoader, DataLoader, DataLoader]:
     """
     Creates a train and test dataloader with a variable batch size and image shape.
     And using a weighted sampler for the training dataloader to have balanced mini-batches when training.
     """
-    train_set = Dataset(data_path=data_path, type=DatasetType.Train, seed=seed, as_rgb=as_rgb, transforms=transforms)
-    validation_set = Dataset(data_path=data_path, type=DatasetType.Validation, seed=seed, as_rgb=as_rgb)
-    test_set = Dataset(data_path=data_path, type=DatasetType.Test, seed=seed, as_rgb=as_rgb)
+    train_set = Dataset(data_path=data_path, type=DatasetType.Train, seed=seed, as_rgb=as_rgb, transforms=transforms, scale=scale)
+    validation_set = Dataset(data_path=data_path, type=DatasetType.Validation, seed=seed, as_rgb=as_rgb, scale=scale)
+    test_set = Dataset(data_path=data_path, type=DatasetType.Test, seed=seed, as_rgb=as_rgb, scale=scale)
 
     train_loader = DataLoader(
         train_set,
