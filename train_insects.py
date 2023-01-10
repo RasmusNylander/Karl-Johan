@@ -131,7 +131,7 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
             scheduler.step()
             log_offset += len(train_loader)
 
-            for prefix, result in zip(["train_", "test_"], [train_metrics, validation_metrics]):
+            for prefix, result in zip(["(train) ", "(validation) "], [train_metrics, validation_metrics]):
                 wandb.log({f"{prefix}loss": result.loss})
                 wandb.log({f"{prefix}accuracy": result.acc})
                 wandb.log({f"{prefix}area under curve mean": result.auc.mean().item()})
