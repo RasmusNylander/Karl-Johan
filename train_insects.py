@@ -92,9 +92,7 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs, s
       "epochs": num_epochs,
       "batch_size": batch_size,
       "model": model_pick,
-      "scale":scale,
-      "seed":seed,
-      "transforms":transforms
+      "scale":scale
     })
     
 
