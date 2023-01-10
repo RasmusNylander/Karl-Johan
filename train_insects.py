@@ -2,9 +2,9 @@ import os
 import sys
 import time
 import argparse
+
 import torch
 from monai.data import DataLoader
-from monai.handlers.tensorboard_handlers import SummaryWriter
 from torch import Tensor, device as Device
 from torch.nn.modules.loss import _Loss
 from torch.optim import Optimizer
@@ -12,9 +12,9 @@ from torchmetrics.functional.classification import multiclass_auroc
 from tqdm import trange
 
 from create_dataloader import make_dataloaders
-from monai.networks.nets import densenet121, SEResNet50, ResNet
 from accuracy import accuracy
 import wandb
+from model_picker import ModelType, get_model
 
 
 def train_one_epoch(model, dataloader: DataLoader, loss_function: _Loss, optimizer: Optimizer, device: Device) -> float:
@@ -65,18 +65,16 @@ def test(model, dataloader: DataLoader, loss_function: _Loss, device: Device) ->
         return TestResult(loss.mean().item(), accuracy_score.mean().item(), area_under_curve.mean(dim=1))
 
 
-
-def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs, scale):
+def main(data_path: str, output_path: str, model_pick: ModelType, batch_size, num_epochs, scale):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    as_rgb: bool = model_pick == "convnext"
     train_loader, validation_loader, test_loader = make_dataloaders(
         batch_size=batch_size,
         seed=69420,
         data_path=data_path,
         transforms=True,
         pin_memory=False,
-        as_rgb=as_rgb,
+        as_rgb=False,
         scale=scale
     )
         
@@ -100,18 +98,10 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs, s
       "epochs": num_epochs,
       "batch_size": batch_size,
       "model": model_pick,
-      "scale":scale
+      "scale": scale
     })
-    
 
-    if model_pick == "ResNet18":
-        model = ResNet(block="basic", layers=[2, 2, 2, 2], block_inplanes=[32,64,128,256], num_classes=10, n_input_channels=1).to(device) #resnet18
-    elif model_pick == "ResNet50":
-        model = ResNet(block="bottleneck", layers=[3, 4, 6, 3], block_inplanes=[32,64,128,256], num_classes=10, n_input_channels=1).to(device) #resnet50
-    elif model_pick == "DenseNet":
-        model = densenet121(spatial_dims=3, in_channels= 1, out_channels=10).to(device)
-    elif model_pick == "SEResNet50":
-        model = SEResNet50(spatial_dims=3, in_channels= 1, num_classes=10).to(device)
+    model = get_model(model_pick).to(device)
         
     wandb.watch(model)
     
@@ -192,14 +182,16 @@ if __name__ == "__main__":
     args = parser.parse_args()
     data_path = args.data_path
     output_path = args.output_path
-    model = args.model
+    model_name = args.model
     batch_size = args.batch_size
     num_epochs = args.num_epochs
     if args.scale != 1:
         scale = args.scale
     else:
         scale = None
-    
-    wandb.init(project="3d-insect-classification", entity="ml_dtu", name=model)
 
-    main(data_path, output_path, model, batch_size, num_epochs, scale)
+    model_type = ModelType[model_name]
+
+    wandb.init(project="3d-insect-classification", entity="ml_dtu", name=model_name)
+
+    main(data_path, output_path, model_type, batch_size, num_epochs, scale)
