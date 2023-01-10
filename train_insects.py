@@ -178,6 +178,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", default="8", type=int)
     parser.add_argument("--num_epochs", default="100", type=int)
     parser.add_argument("--scale", default="1", type=float)
+    parser.add_argument("--wandb_prefix", default=None, type=str, help="prefix for wandb project name. It may be whitespace in which case no prefix is used but it must be specified.")
     
     args = parser.parse_args()
     data_path = args.data_path
@@ -189,9 +190,12 @@ if __name__ == "__main__":
         scale = args.scale
     else:
         scale = None
+    if args.wandb_prefix == None:
+        raise ValueError("No weights and biases prefix specified.")
+    wandb_prefix = args.wandb_prefix.strip()
 
     model_type = ModelType[model_name]
 
-    wandb.init(project="3d-insect-classification", entity="ml_dtu", name=model_name)
+    wandb.init(project="3d-insect-classification", entity="ml_dtu", name=f"{wandb_prefix} {model_name}")
 
     main(data_path, output_path, model_type, batch_size, num_epochs, scale)
