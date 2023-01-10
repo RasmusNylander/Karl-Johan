@@ -85,24 +85,24 @@ def main(data_path: str, output_path: str, model_pick: ModelType, batch_size, nu
     learning_rate = 1e-3
     milestones = [0.5 * num_epochs, 0.75 * num_epochs]
     gamma = 0.1
-    
+
+    model = get_model(model_pick).to(device)
+
     wandb.init(config = {
       "learning_rate": learning_rate,
       "epochs": num_epochs,
       "batch_size": batch_size,
-      "model": model_pick,
-      "scale":scale
+      "model": model_pick.name,
+      "scale": scale
     })
     
     wandb.log({
       "epochs": num_epochs,
       "batch_size": batch_size,
-      "model": model_pick,
+      "model": model_pick.name,
       "scale": scale
     })
 
-    model = get_model(model_pick).to(device)
-        
     wandb.watch(model)
     
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.01)
