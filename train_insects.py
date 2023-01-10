@@ -141,7 +141,7 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs, s
                 for index, value in enumerate(result.auc):
                     wandb.log({f"{prefix}area under curve, {label_to_name[index]}": value.item()})
 
-            cur_auc = validation_metrics.acc
+            cur_acc = validation_metrics.acc
             if cur_acc > best_acc:
                 best_epoch = epoch
                 best_acc = cur_acc
