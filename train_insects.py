@@ -65,7 +65,7 @@ def test(model, dataloader: DataLoader, loss_function: _Loss, device: Device) ->
 
 
 
-def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
+def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs, scale):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     as_rgb: bool = model_pick == "convnext"
@@ -75,7 +75,8 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
         data_path=data_path,
         transforms=True,
         pin_memory=False,
-        as_rgb=as_rgb
+        as_rgb=as_rgb,
+        scale
     )
         
     num_classes = len(train_loader.dataset.get_image_classes())
@@ -86,17 +87,21 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
     milestones = [0.5 * num_epochs, 0.75 * num_epochs]
     gamma = 0.1
     
-    wandb.config = {
+    wandb.init(config = {
       "learning_rate": learning_rate,
       "epochs": num_epochs,
       "batch_size": batch_size,
-      "model": model_pick
-    }
+      "model": model_pick,
+      "scale":scale,
+      "seed":seed,
+      "transforms":transforms
+    })
+    
 
     if model_pick == "ResNet18":
-        model = ResNet(block="basic", layers=[2, 2, 2, 2], block_inplanes=[64,128,256,512], num_classes=10, n_input_channels=1).to(device) #resnet18
+        model = ResNet(block="basic", layers=[2, 2, 2, 2], block_inplanes=[32,64,128,256], num_classes=10, n_input_channels=1).to(device) #resnet18
     elif model_pick == "ResNet50":
-        model = ResNet(block="bottleneck", layers=[3, 4, 6, 3], block_inplanes=[64,128,256,512], num_classes=10, n_input_channels=1).to(device) #resnet50
+        model = ResNet(block="bottleneck", layers=[3, 4, 6, 3], block_inplanes=[32,64,128,256], num_classes=10, n_input_channels=1).to(device) #resnet50
     elif model_pick == "DenseNet":
         model = densenet121(spatial_dims=3, in_channels= 1, out_channels=10).to(device)
     elif model_pick == "SEResNet50":
@@ -138,10 +143,10 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
                 for index, value in enumerate(result.auc):
                     wandb.log({f"{prefix}area under curve, {label_to_name[index]}": value.item()})
 
-            cur_auc = validation_metrics.auc.mean().item()
-            if cur_auc > best_auc:
+            cur_auc = validation_metrics.acc
+            if cur_acc > best_acc:
                 best_epoch = epoch
-                best_auc = cur_auc
+                best_acc = cur_acc
                 best_model_state = model.state_dict().copy()
                 state = {
                     "net": best_model_state,
@@ -163,6 +168,9 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs):
     train_log = "train  auc: %.5f  acc: %.5f\n" % (train_metrics.auc.mean(), train_metrics.acc)
     validation_log = f"validation  auc: {validation_metrics.auc.mean():.5f}  acc: {validation_metrics.acc:.5f}\n"
     test_log = "test  auc: %.5f  acc: %.5f\n" % (test_metrics.auc.mean(), test_metrics.acc)
+    
+    wandb.log({"test accuracy":test_metrics.acc,"test area under curve mean":test_metrics.auc.mean()})
+              
 
     log = f"{train_log}\n{validation_log}\n{test_log}\n"
     print(log)
@@ -177,6 +185,7 @@ if __name__ == "__main__":
     parser.add_argument("--model", default="ResNet18", type=str, help='ResNet18, ResNet50, DenseNet, SEResNet50')
     parser.add_argument("--batch_size", default="8", type=int)
     parser.add_argument("--num_epochs", default="100", type=int)
+    parser.add_argument("--scale", default="1", type=float)
     
     args = parser.parse_args()
     data_path = args.data_path
@@ -184,7 +193,11 @@ if __name__ == "__main__":
     model = args.model
     batch_size = args.batch_size
     num_epochs = args.num_epochs
+    if args.scale != 1:
+        scale = args.scale
+    else:
+        scale = None
     
     wandb.init(project="3d-insect-classification", entity="ml_dtu", name=model)
 
-    main(data_path, output_path, model, batch_size, num_epochs)
+    main(data_path, output_path, model, batch_size, num_epochs, scale)
