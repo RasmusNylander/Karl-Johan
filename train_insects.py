@@ -76,7 +76,7 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs, s
         transforms=True,
         pin_memory=False,
         as_rgb=as_rgb,
-        scale
+        scale=scale
     )
         
     num_classes = len(train_loader.dataset.get_image_classes())
