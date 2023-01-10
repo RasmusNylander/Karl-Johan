@@ -2,11 +2,12 @@ import os
 
 import pandas as pd
 
-CSV_PATH = "./datasets/sorted_downscaled/train.csv"
-SUBSET_PATH = "./datasets/sorted_downscaled/validation.csv"
-DIFFERENCE_PATH = "./datasets/sorted_downscaled/new_train.csv"
+CSV_PATH = "./sorted_downscaled/train_temp.csv"
+SUBSET_PATH = "./sorted_downscaled/validation.csv"
+DIFFERENCE_PATH = "./sorted_downscaled/train.csv"
 SAMPLE_PERCENTAGE = 0.20
-SEED = 9000 + 4206969420
+# SEED = 9000 + 4206969420
+SEED = 8963514
 
 # Avoid accidentally overwriting data
 error: str = ""
@@ -25,7 +26,7 @@ if error:
     raise ValueError(error.strip())
 
 original_csv = pd.read_csv(CSV_PATH)
-labels = original_csv['0'].map(lambda x: x[0:2])
+labels = original_csv["files"].map(lambda x: x[0:2])
 grouped = original_csv.groupby(labels.values)
 csv_subset = grouped.sample(frac=SAMPLE_PERCENTAGE, random_state=SEED)
 difference = original_csv.index.difference(csv_subset.index)
