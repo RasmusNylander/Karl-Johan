@@ -1,14 +1,9 @@
-from enum import Enum
-
-import torch
-
 import wandb
 
 from model_picker import ModelType
-from train_insects import TestResult
 
 
-def init_logging(run_name: str, learning_rate: float, num_epochs: int, batch_size: int, modelType: ModelType, scale: float, model: torch.nn.Module):
+def init_logging(run_name: str, learning_rate: float, num_epochs: int, batch_size: int, modelType: ModelType, scale: float, model):
     wandb.init(
         project="3d-insect-classification",
         name=run_name,
@@ -25,7 +20,7 @@ def init_logging(run_name: str, learning_rate: float, num_epochs: int, batch_siz
     wandb.watch(model)
 
 
-def log_test_result(result: TestResult, log_prefix: str):
+def log_test_result(result, log_prefix: str):
     wandb.log({
         f"{log_prefix}loss": result.loss,
         f"{log_prefix}accuracy": result.acc,

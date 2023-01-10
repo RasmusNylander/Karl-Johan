@@ -14,7 +14,7 @@ from tqdm import trange
 from create_dataloader import make_dataloaders
 from accuracy import accuracy
 import wandb
-from logging import init_logging, log_test_result
+from logging_wb import init_logging, log_test_result
 from model_picker import ModelType, get_model
 
 
@@ -185,5 +185,7 @@ if __name__ == "__main__":
         if args.wandb_prefix == None:
             raise ValueError("No weights and biases prefix specified.")
         wandb_prefix = args.wandb_prefix.strip()
+    else:
+        wandb_prefix = ""
 
     main(data_path, output_path, model_type, batch_size, num_epochs, scale, enable_logging, wandb_prefix)
