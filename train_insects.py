@@ -118,7 +118,7 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs, s
     if not os.path.exists(output_root):
         os.makedirs(output_root)
 
-    best_auc = 0
+    best_acc = 0
     best_epoch = 0
     best_model_state = model.state_dict().copy()
 
@@ -153,7 +153,7 @@ def main(data_path: str, output_path: str, model_pick, batch_size, num_epochs, s
                 path = os.path.join(output_root, "best_model.pth")
                 torch.save(state, path)
 
-                progress_bar.set_description(f"Epoch {epoch} – Best AUC: {best_auc:.5} – Best ACC: {validation_metrics.acc:.5}")
+                progress_bar.set_description(f"Epoch {epoch} – Best AUC: {validation_metric.auc.mean().item():.5} – Best ACC: {best_acc:.5}")
 
 
 
