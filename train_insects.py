@@ -65,7 +65,7 @@ def test(model, dataloader: DataLoader, loss_function: _Loss, device: Device) ->
 
         return TestResult(loss.mean().item(), accuracy_score.mean().item(), area_under_curve.mean(dim=1))
 
-def main(data_path: str, output_path: str, model_pick: ModelType, batch_size, num_epochs, scale, enable_logging: bool, wandb_prefix: str):
+def main(data_path: str, output_path: str, model_pick: ModelType, batch_size, num_epochs, scale, enable_logging: bool, run_log_prefix: str):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     train_loader, validation_loader, test_loader = make_dataloaders(
@@ -95,7 +95,7 @@ def main(data_path: str, output_path: str, model_pick: ModelType, batch_size, nu
     loss_function = torch.nn.CrossEntropyLoss()
 
     if enable_logging:
-        init_logging(f"{wandb_prefix} {model_name}", learning_rate, num_epochs, batch_size, model_pick, scale, model)
+        init_logging(f"{run_log_prefix} {model_name}", learning_rate, num_epochs, batch_size, model_pick, scale, model)
 
     t = time.strftime("%y%m%d_%H%M%S")
     output_root = os.path.join(output_path, f'{model_pick}_{t}')
