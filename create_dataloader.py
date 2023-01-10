@@ -19,7 +19,15 @@ class DatasetType(Enum):
 
 
 class Dataset(TorchDataset):
-    def __init__(self, data_path, type: DatasetType, seed=42, as_rgb=False, transforms=False, scale=None):
+    def __init__(self, data_path, type: DatasetType, seed=42, as_rgb=False, transforms=False, scale: float = 1.0):
+        assert scale == 1.0 or scale == 0.5 or scale == 0.25, "Scale must be 1.0, 0.5 or 0.25"
+        if scale == 1.0:
+            scale_path_offset = ""
+        if scale == 0.5:
+            scale_path_offset = "_128x64x64"
+        elif scale == 0.25:
+            scale_path_offset = "_64x32x32"
+
         assert len(DatasetType) == 3
         match type:
             case DatasetType.Train:
@@ -30,8 +38,9 @@ class Dataset(TorchDataset):
                 self.image_paths = pd.read_csv(data_path + "/validation.csv", names=["files"], header=0).files.tolist()
 
 
-        self.image_paths = [f"{data_path}/{path}" for path in self.image_paths]
 
+
+        self.image_paths = [f"{data_path}{scale_path_offset}/{path}" for path in self.image_paths]
         self.image_classes = [
             os.path.split(d)[1] for d in glob.glob(data_path + "/*") if os.path.isdir(d)
         ]
@@ -41,7 +50,6 @@ class Dataset(TorchDataset):
         self.as_rgb = as_rgb
         self.transforms = transforms
         self.rot = RandomRotation(180)
-        self.scale = scale
 
     def __len__(self):
         return len(self.image_paths)  # len(self.data)
@@ -50,11 +58,7 @@ class Dataset(TorchDataset):
         image_path = self.image_paths[idx]
 
         image = io.imread(image_path)
-        if self.scale is not None:
-            image = zoom(image,self.scale)
-        
-        # image = image[::8, ::8, ::8]
-        # image = image[::16, ::16, ::16]
+
         image = np.expand_dims(image, 0)
         
         X = torch.Tensor(image)
@@ -92,7 +96,7 @@ def make_dataloaders(
     persistent_workers=True,
     as_rgb=False,
     transforms=False,
-    scale=None,
+    scale: float = 1.0,
 ) -> tuple[DataLoader, DataLoader, DataLoader]:
     """
     Creates a train and test dataloader with a variable batch size and image shape.

@@ -65,7 +65,7 @@ def test(model, dataloader: DataLoader, loss_function: _Loss, device: Device) ->
 
         return TestResult(loss.mean().item(), accuracy_score.mean().item(), area_under_curve.mean(dim=1))
 
-def main(data_path: str, output_path: str, model_pick: ModelType, batch_size, num_epochs, scale, enable_logging: bool, run_log_prefix: str):
+def main(data_path: str, output_path: str, model_pick: ModelType, batch_size: int, num_epochs: int, scale: float, enable_logging: bool, run_log_prefix: str):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     train_loader, validation_loader, test_loader = make_dataloaders(
@@ -172,10 +172,9 @@ if __name__ == "__main__":
     model_name = args.model
     batch_size = args.batch_size
     num_epochs = args.num_epochs
-    if args.scale != 1:
-        scale = args.scale
-    else:
-        scale = None
+    scale = args.scale
+
+    assert scale in [0.25, 0.5, 1.0], f"scale of {scale} not yet supported. Scale must be either 0.25, 0.5 or 1.0"
 
     model_type = ModelType[model_name]
 
