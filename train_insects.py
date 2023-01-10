@@ -65,7 +65,7 @@ def test(model, dataloader: DataLoader, loss_function: _Loss, device: Device) ->
         return TestResult(loss.mean().item(), accuracy_score.mean().item(), area_under_curve.mean(dim=1))
 
 
-def main(data_path: str, output_path: str, model_pick: ModelType, batch_size, num_epochs, scale):
+def main(data_path: str, output_path: str, model_pick: ModelType, batch_size, num_epochs, scale, enable_logging: bool):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     train_loader, validation_loader, test_loader = make_dataloaders(
@@ -88,22 +88,23 @@ def main(data_path: str, output_path: str, model_pick: ModelType, batch_size, nu
 
     model = get_model(model_pick).to(device)
 
-    wandb.init(config = {
-      "learning_rate": learning_rate,
-      "epochs": num_epochs,
-      "batch_size": batch_size,
-      "model": model_pick.name,
-      "scale": scale
-    })
-    
-    wandb.log({
-      "epochs": num_epochs,
-      "batch_size": batch_size,
-      "model": model_pick.name,
-      "scale": scale
-    })
+    if enable_logging:
+        wandb.init(config = {
+          "learning_rate": learning_rate,
+          "epochs": num_epochs,
+          "batch_size": batch_size,
+          "model": model_pick.name,
+          "scale": scale
+        })
 
-    wandb.watch(model)
+        wandb.log({
+          "epochs": num_epochs,
+          "batch_size": batch_size,
+          "model": model_pick.name,
+          "scale": scale
+        })
+
+        wandb.watch(model)
     
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.01)
     scheduler = torch.optim.lr_scheduler.MultiStepLR(
@@ -121,7 +122,6 @@ def main(data_path: str, output_path: str, model_pick: ModelType, batch_size, nu
     log_offset = 0
     with trange(num_epochs, unit="epoch", desc="Epoch 0 – Best AUC: 0 – Best ACC: 0") as progress_bar:
         for epoch in progress_bar:
-            wandb.log({"Epoch": epoch})
             train_loss = train_one_epoch(model, train_loader, loss_function, optimizer, device)
 
             train_metrics = test(model, train_loader, loss_function, device)
@@ -130,12 +130,14 @@ def main(data_path: str, output_path: str, model_pick: ModelType, batch_size, nu
             scheduler.step()
             log_offset += len(train_loader)
 
-            for prefix, result in zip(["(train) ", "(validation) "], [train_metrics, validation_metrics]):
-                wandb.log({f"{prefix}loss": result.loss})
-                wandb.log({f"{prefix}accuracy": result.acc})
-                wandb.log({f"{prefix}area under curve mean": result.auc.mean().item()})
-                for index, value in enumerate(result.auc):
-                    wandb.log({f"{prefix}area under curve, {label_to_name[index]}": value.item()})
+            if enable_logging:
+                wandb.log({"Epoch": epoch})
+                for prefix, result in zip(["(train) ", "(validation) "], [train_metrics, validation_metrics]):
+                    wandb.log({f"{prefix}loss": result.loss})
+                    wandb.log({f"{prefix}accuracy": result.acc})
+                    wandb.log({f"{prefix}area under curve mean": result.auc.mean().item()})
+                    for index, value in enumerate(result.auc):
+                        wandb.log({f"{prefix}area under curve, {label_to_name[index]}": value.item()})
 
             if abs(validation_metrics.loss) < best_loss_abs:
                 best_loss_abs = abs(validation_metrics.loss)
@@ -160,9 +162,9 @@ def main(data_path: str, output_path: str, model_pick: ModelType, batch_size, nu
     train_log = "train  auc: %.5f  acc: %.5f\n" % (train_metrics.auc.mean(), train_metrics.acc)
     validation_log = f"validation  auc: {validation_metrics.auc.mean():.5f}  acc: {validation_metrics.acc:.5f}\n"
     test_log = "test  auc: %.5f  acc: %.5f\n" % (test_metrics.auc.mean(), test_metrics.acc)
-    
-    wandb.log({"test accuracy":test_metrics.acc,"test area under curve mean":test_metrics.auc.mean()})
-              
+
+    if enable_logging:
+        wandb.log({"test accuracy":test_metrics.acc,"test area under curve mean":test_metrics.auc.mean()})
 
     log = f"{train_log}\n{validation_log}\n{test_log}\n"
     print(log)
@@ -179,7 +181,8 @@ if __name__ == "__main__":
     parser.add_argument("--num_epochs", default="100", type=int)
     parser.add_argument("--scale", default="1", type=float)
     parser.add_argument("--wandb_prefix", default=None, type=str, help="prefix for wandb project name. It may be whitespace in which case no prefix is used but it must be specified.")
-    
+    parser.add_argument("--no_logging", action="store_true", help="if set, no logging is done")
+
     args = parser.parse_args()
     data_path = args.data_path
     output_path = args.output_path
@@ -190,12 +193,15 @@ if __name__ == "__main__":
         scale = args.scale
     else:
         scale = None
-    if args.wandb_prefix == None:
-        raise ValueError("No weights and biases prefix specified.")
-    wandb_prefix = args.wandb_prefix.strip()
 
     model_type = ModelType[model_name]
 
-    wandb.init(project="3d-insect-classification", entity="ml_dtu", name=f"{wandb_prefix} {model_name}")
+    enable_logging = not args.no_logging
 
-    main(data_path, output_path, model_type, batch_size, num_epochs, scale)
+    if enable_logging:
+        if args.wandb_prefix == None:
+            raise ValueError("No weights and biases prefix specified.")
+        wandb_prefix = args.wandb_prefix.strip()
+        wandb.init(project="3d-insect-classification", entity="ml_dtu", name=f"{wandb_prefix} {model_name}")
+
+    main(data_path, output_path, model_type, batch_size, num_epochs, scale, enable_logging)
