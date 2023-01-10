@@ -65,7 +65,7 @@ def test(model, dataloader: DataLoader, loss_function: _Loss, device: Device) ->
         return TestResult(loss.mean().item(), accuracy_score.mean().item(), area_under_curve.mean(dim=1))
 
 
-def main(data_path: str, output_path: str, model_pick: ModelType, batch_size, num_epochs, scale, enable_logging: bool):
+def main(data_path: str, output_path: str, model_pick: ModelType, batch_size, num_epochs, scale, enable_logging: bool, wandb_prefix: str):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     train_loader, validation_loader, test_loader = make_dataloaders(
@@ -88,29 +88,27 @@ def main(data_path: str, output_path: str, model_pick: ModelType, batch_size, nu
 
     model = get_model(model_pick).to(device)
 
-    if enable_logging:
-        wandb.init(config = {
-          "learning_rate": learning_rate,
-          "epochs": num_epochs,
-          "batch_size": batch_size,
-          "model": model_pick.name,
-          "scale": scale
-        })
-
-        wandb.log({
-          "epochs": num_epochs,
-          "batch_size": batch_size,
-          "model": model_pick.name,
-          "scale": scale
-        })
-
-        wandb.watch(model)
-    
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.01)
     scheduler = torch.optim.lr_scheduler.MultiStepLR(
         optimizer, milestones=milestones, gamma=gamma
     )
     loss_function = torch.nn.CrossEntropyLoss()
+
+    if enable_logging:
+        wandb.init(
+            project="3d-insect-classification",
+            name=f"{wandb_prefix} {model_name}",
+            entity="ml_dtu",
+            config={
+              "learning rate": learning_rate,
+              "number of epochs": num_epochs,
+              "batch size": batch_size,
+              "model": model_pick.name,
+              "scale": scale,
+              "optimiser": "Adam"
+            })
+        wandb.watch(model)
+
 
     t = time.strftime("%y%m%d_%H%M%S")
     output_root = os.path.join(output_path, f'{model_pick}_{t}')
@@ -202,6 +200,5 @@ if __name__ == "__main__":
         if args.wandb_prefix == None:
             raise ValueError("No weights and biases prefix specified.")
         wandb_prefix = args.wandb_prefix.strip()
-        wandb.init(project="3d-insect-classification", entity="ml_dtu", name=f"{wandb_prefix} {model_name}")
 
-    main(data_path, output_path, model_type, batch_size, num_epochs, scale, enable_logging)
+    main(data_path, output_path, model_type, batch_size, num_epochs, scale, enable_logging, wandb_prefix)
