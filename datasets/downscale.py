@@ -21,7 +21,10 @@ for image_path in image_paths:
     os.makedirs("/".join(path_05.split("/")[:-1]), exist_ok=True)
     os.makedirs("/".join(path_025.split("/")[:-1]), exist_ok=True)
     
+    
     imwrite(path_05,im_05)
     imwrite(path_025,im_025)
     
+os.makedirs("sorted_downscale_128x64x64/GH", exist_ok=True)
+os.makedirs("sorted_downscale_64x32x32/GH", exist_ok=True)
     
