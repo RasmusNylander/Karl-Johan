@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from monai.data.image_reader import nib
 from torch import Tensor
+from tqdm import tqdm
 
 from create_dataloader import Dataset, make_dataloaders
 from medcam import medcam
@@ -51,7 +52,7 @@ for label in range(dataset.num_classes()):
 
 image_output_root = f"attention_maps/{model_string_id}/layer"
 assert BATCH_SIZE == 1
-for image_id, (image_batch, batch_labels) in enumerate(test_loader):
+for image_id, (image_batch, batch_labels) in enumerate(tqdm(test_loader, unit="image")):
     image_name = dataset.get_name_of_image(image_id)
     image_dir = f"{image_output_root}/{image_name}"
     if not os.path.exists(image_dir):
