@@ -6,6 +6,9 @@ import glob
 import tifffile
 from tqdm import tqdm
 
+def remove_first_directory(path: str):
+    return os.path.join(*path.split(os.path.sep)[1:])
+
 def create_mask(im,intensity_threshold,iteration):
     h,_,_ = ndi.center_of_mass(im)
     h = int(h)
@@ -36,11 +39,11 @@ if __name__=="__main__":
     files = glob.glob("sorted_downscaled/**/*.tif")
     for file in tqdm(files):
         im = io.imread(file)
-        mask = create_mask(im,100,0)
+        mask = create_mask(im, 100, 0)
         im[mask == 0] = 0
-        new_path = "masked_"+file
-        os.makedirs(os.path.split(new_path)[0],exist_ok=True)
-        tifffile.imsave(new_path,im)
+        new_path = os.path.join("masked", remove_first_directory(file))
+        os.makedirs(os.path.split(new_path)[0], exist_ok=True)
+        tifffile.imwrite(new_path, im)
         
-    os.makedirs("masked_sorted_downscaled/GH", exist_ok=True)
-    os.makedirs("masked_sorted_downscaled/GH", exist_ok=True)
+    os.makedirs("masked/GH", exist_ok=True)
+    os.makedirs("masked/GH", exist_ok=True)
