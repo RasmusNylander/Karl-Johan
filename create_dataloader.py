@@ -77,17 +77,20 @@ class Dataset(TorchDataset):
 
         return X, y
 
-    def get_image_paths(self):
+    def get_image_paths(self) -> list[str]:
         return self.image_paths
 
-    def get_image_classes(self):
+    def get_image_classes(self) -> list[str]:
         return self.image_classes
 
-    def get_name_to_label(self):
+    def get_name_to_label(self) -> dict:
         return self.name_to_label
 
-    def num_classes(self):
-        return len(self.get_image_classes())
+    def num_classes(self) -> int:
+        return len(self.image_classes)
+
+    def label_to_name(self, label: int) -> str:
+        return self.image_classes[label]
 
 
 def make_dataloaders(
