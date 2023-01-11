@@ -1,3 +1,4 @@
+from joblib import Parallel, delayed
 from scipy.ndimage import zoom
 import glob
 from skimage import io
@@ -10,7 +11,7 @@ scale_names = ["64x32x32", "128x64x64"]
 
 image_paths = glob.glob("**[a-zA-Z]/**/*.tif")
 
-for image_path in tqdm(image_paths):
+def scale_and_save_image(image_path, scales, scale_names):
     image = io.imread(image_path)
 
     for scale, scale_name in zip(scales, scale_names):
@@ -22,7 +23,12 @@ for image_path in tqdm(image_paths):
         scaled_image = zoom(image, scale)
         imwrite(new_path, scaled_image)
 
-    
+# for image_path in tqdm(image_paths):
+#     scale_and_save_image(image_path, scales, scale_names)
+
+Parallel(n_jobs=16)(delayed(scale_and_save_image)(image_path, scales, scale_names) for image_path in tqdm(image_paths, unit="image", desc="Scaling images"))
+
+
 for dataset in ["sorted_downscaled", "masked"]:
     for scale_name in scale_names:
         directory = f"{dataset}_{scale_name}/GH"
