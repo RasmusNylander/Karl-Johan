@@ -1,5 +1,6 @@
 import argparse
 import copy
+from tqdm.contrib import itertools
 import os
 
 import numpy as np
@@ -52,6 +53,7 @@ def generate_attention_maps(
         data_path: str,
         device: torch.device,
         layer: int,
+        leave_progress_bar=True
 ):
     model_string_id = f"{model_type.name}_{str(int(scale * 100)).zfill(3)}"
 
@@ -73,7 +75,7 @@ def generate_attention_maps(
 
     image_output_root = f"attention_maps/{model_string_id}/layer{layer}"
     assert BATCH_SIZE == 1
-    for image_id, (image_batch, batch_labels) in enumerate(tqdm(test_loader, unit="image")):
+    for image_id, (image_batch, batch_labels) in enumerate(tqdm(test_loader, unit="image", leave=leave_progress_bar, desc=f"{model_string_id}, layer {layer}")):
         image_name = dataset.get_name_of_image(image_id)
         image_dir = f"{image_output_root}/{image_name}"
         os.makedirs(image_dir, exist_ok=True)
@@ -99,23 +101,31 @@ def generate_attention_maps(
                 save_attention_map(attention_map, f"{image_dir}/{map_name}")
                 model.zero_grad()
 
+def do_everything():
+    for model_type, scale, layer in itertools.product(ModelType, [0.25, 0.5, 1.0], [1, 2, 3, 4]):
+            generate_attention_maps(model_type, scale, models_root, data_path, device, layer, False)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate attention maps for a model")
     parser.add_argument("--data_path", default="./datasets/sorted_downscaled", type=str)
     parser.add_argument("--models_root", default="./models", type=str)
     parser.add_argument("--output_path", default="./attention_maps", type=str)
-    parser.add_argument("--model", type=str, help='ResNet18, ResNet50, DenseNet121, SEResNet50', required=True)
-    parser.add_argument("--scale", type=float, help='Scale of the images. Must be 0.25, 0.5 or 1.0', required=True)
-    parser.add_argument("--layer", type=int, help='Layer to use for attention maps.', required=True)
+    parser.add_argument("--model", type=str, help='ResNet18, ResNet50, DenseNet121, SEResNet50')
+    parser.add_argument("--scale", type=float, help='Scale of the images. Must be 0.25, 0.5 or 1.0')
+    parser.add_argument("--layer", type=int, help='Layer to use for attention maps.')
     parser.add_argument("--cpu", action="store_true", help="Force using CPU")
+    parser.add_argument("--do_everything", action="store_true", help="Create attention map for each layer of each scale of each model")
 
     args = parser.parse_args()
-    data_path = args.data_path
-    models_root = args.models_root
-    output_path = args.output_path
+    data_path: str = args.data_path
+    models_root: str = args.models_root
+    output_path: str = args.output_path
+    device = torch.device("cpu" if args.cpu or not torch.cuda.is_available() else "cuda:0")
 
-    scale = args.scale
+    if (args.do_everything):
+        do_everything()
+
+    scale: float = args.scale
     assert scale in [0.25, 0.5, 1.0], f"scale of {scale} not yet supported. Scale must be either 0.25, 0.5 or 1.0"
 
     model_name = args.model
@@ -124,18 +134,7 @@ if __name__ == "__main__":
     except KeyError:
         raise ValueError(f"Model {model_name} not supported. Choose from {[type.name for type in ModelType]}")
 
-    layer = args.layer
-    match model_type:
-        case ModelType.ResNet18:
-            assert layer in [1, 2, 3, 4], f"Layer {layer} not supported for ResNet18. Choose from [1, 2, 3, 4]"
-        case ModelType.ResNet50:
-            assert layer in [1, 2, 3, 4], f"Layer {layer} not supported for ResNet50. Choose from [1, 2, 3, 4]"
-        case ModelType.DenseNet121:
-            assert layer in [1, 2, 3, 4], f"Layer {layer} not supported for DenseNet121. Choose from [1, 2, 3, 4]"
-        case ModelType.SEResNet50:
-            assert layer in [1, 2, 3, 4], f"Layer {layer} not supported for SEResNet50. Choose from [1, 2, 3, 4]"
-
-
-    device = torch.device("cpu" if args.cpu or not torch.cuda.is_available() else "cuda:0")
+    layer: int = args.layer
+    assert layer in [1, 2, 3, 4], f"Layer {layer} not supported. Choose from [1, 2, 3, 4]"
 
     generate_attention_maps(model_type, scale, models_root, data_path, device, layer)
