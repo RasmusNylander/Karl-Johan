@@ -6,7 +6,9 @@ import os
 
 image_paths = glob.glob("**/**/*.tif")
 
-for image_path in image_paths:
+image_paths = glob.glob("**[a-zA-Z]/**/*.tif")
+
+for image_path in tqdm(image_paths):
     image = io.imread(image_path)
     im_05 = zoom(image,0.5)
     im_025 = zoom(image,0.25)
