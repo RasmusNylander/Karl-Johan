@@ -90,7 +90,7 @@ class Dataset(TorchDataset):
 def make_dataloaders(
     batch_size=16,
     seed=42,
-    data_path="../datasets/sorted_downscaled",
+    data_path="./datasets/sorted_downscaled",
     num_workers=4,
     pin_memory=True,
     persistent_workers=True,
