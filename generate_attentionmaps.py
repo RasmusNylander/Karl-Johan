@@ -20,10 +20,10 @@ def save_attention_map(attention_map: Tensor, path: str):
     first_channel = attention_map[0]
     first_channel = first_channel.numpy().transpose(1, 2, 0)
     image_nifti = nib.Nifti1Image(first_channel, affine=np.eye(4))
-    nib.save(image_nifti, path)
+    nib.save(image_nifti, f"{path}.nii")
 
 
-def create_injected_models(base_model: torch.nn.Module, num_classes: int):
+def create_injected_models(base_model: torch.nn.Module, num_classes: int) -> list[torch.nn.Module]:
     models = [copy.copy(base_model)]
     medcam.inject(models[0], return_attention=True, layer="auto", label="best")
     for label in range(num_classes):
@@ -49,11 +49,12 @@ def generate_attention_maps(
     dataset: Dataset = test_loader.dataset
 
     model = get_model(model_type)
-    model.eval()
     model.to(device)
     model.load_state_dict(torch.load(model_path, map_location=device)['net'], strict=True)
+    model.eval()
 
     models = create_injected_models(model, dataset.num_classes())
+    models_best = models.pop(0)
 
     image_output_root = f"attention_maps/{model_string_id}/layer"
     assert BATCH_SIZE == 1
@@ -64,17 +65,25 @@ def generate_attention_maps(
 
         image_batch = image_batch.to(device)
 
-        prediction, attention_map_predicted_label = models[0](image_batch)
-        prediction_label = prediction[0].argmax(dim=0).item()
-        save_attention_map(attention_map_predicted_label[0].detach().cpu(),
-                           f"{image_dir}/{dataset.label_to_name(prediction_label)}")
 
         correct_label = batch_labels[0].argmax(dim=0).item()
-        if correct_label == prediction_label:
-            continue
-        _, attention_map_correct_label = models[correct_label + 1](image_batch)
-        save_attention_map(attention_map_correct_label[0].detach().cpu(),
-                           f"{image_dir}/{dataset.label_to_name(correct_label)}")
+        prediction, attention_map = models_best(image_batch)
+        models_best.zero_grad()
+        attention_map = attention_map.detach()[0].cpu()
+        prediction_label = prediction[0].argmax(dim=0).item()
+        map_name = f"{dataset.label_to_name(prediction_label)}_prediction{'_correct' if prediction_label == correct_label else ''}"
+        save_attention_map(attention_map, f"{image_dir}/{map_name}")
+
+        for label, model in enumerate(models):
+            if label == prediction_label:
+                continue
+
+            with torch.no_grad():
+                _, attention_map = model(image_batch)
+                attention_map = attention_map.detach()[0].cpu()
+                map_name = f"{dataset.label_to_name(label)}{'correct' if label == correct_label else ''}"
+                save_attention_map(attention_map, f"{image_dir}/{map_name}")
+                model.zero_grad()
 
 
 if __name__ == "__main__":
