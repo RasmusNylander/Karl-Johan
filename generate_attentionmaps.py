@@ -23,14 +23,26 @@ def save_attention_map(attention_map: Tensor, path: str):
     nib.save(image_nifti, f"{path}.nii")
 
 
-def create_injected_models(base_model: torch.nn.Module, num_classes: int) -> list[torch.nn.Module]:
+def create_injected_models(base_model: torch.nn.Module, num_classes: int, layer_name: str) -> list[torch.nn.Module]:
     models = [copy.copy(base_model)]
-    medcam.inject(models[0], return_attention=True, layer="auto", label="best")
+    medcam.inject(models[0], return_attention=True, layer=layer_name, label="best")
     for label in range(num_classes):
         medcam_model = copy.copy(base_model)
-        medcam_model = medcam.inject(medcam_model, return_attention=True, layer="auto", label=label)
+        medcam_model = medcam.inject(medcam_model, replace=True, layer=layer_name, label=label)
         models.append(medcam_model)
     return models
+
+
+def layer_to_layer_name(model: ModelType, layer: int) -> str:
+    match model:
+        case ModelType.ResNet18:
+            return f"layer{layer}"
+        case ModelType.ResNet50:
+            return f"layer{layer}"
+        case ModelType.DenseNet121:
+            return f"features.denseblock{layer}"
+        case ModelType.SEResNet50:
+            return f"layer{layer}"
 
 
 def generate_attention_maps(
@@ -39,13 +51,14 @@ def generate_attention_maps(
         models_root: str,
         data_path: str,
         device: torch.device,
+        layer: int,
 ):
     model_string_id = f"{model_type.name}_{str(int(scale * 100)).zfill(3)}"
 
     model_path = f"{models_root}/{model_string_id}.pth"
 
     _, _, test_loader = make_dataloaders(num_workers=0, persistent_workers=False, data_path=data_path,
-                                         batch_size=BATCH_SIZE, scale=scale)
+                                         batch_size=BATCH_SIZE, scale=scale, pin_memory=False)
 
     dataset: Dataset = test_loader.dataset
 
@@ -54,10 +67,11 @@ def generate_attention_maps(
     model.load_state_dict(torch.load(model_path, map_location=device)['net'], strict=True)
     model.eval()
 
-    models = create_injected_models(model, dataset.num_classes())
-    models_best = models.pop(0)
+    layer_name = layer_to_layer_name(model_type, layer)
+    models = create_injected_models(model, dataset.num_classes(), layer_name)
+    model_best = models.pop(0)
 
-    image_output_root = f"attention_maps/{model_string_id}/layer"
+    image_output_root = f"attention_maps/{model_string_id}/layer{layer}"
     assert BATCH_SIZE == 1
     for image_id, (image_batch, batch_labels) in enumerate(tqdm(test_loader, unit="image")):
         image_name = dataset.get_name_of_image(image_id)
@@ -67,8 +81,8 @@ def generate_attention_maps(
         image_batch = image_batch.to(device)
 
         correct_label = batch_labels[0].argmax(dim=0).item()
-        prediction, attention_map = models_best(image_batch)
-        models_best.zero_grad()
+        prediction, attention_map = model_best(image_batch)
+        model_best.zero_grad()
         attention_map = attention_map.detach()[0].cpu()
         prediction_label = prediction[0].argmax(dim=0).item()
         map_name = f"{dataset.label_to_name(prediction_label)}_prediction{'_correct' if prediction_label == correct_label else ''}"
@@ -79,7 +93,7 @@ def generate_attention_maps(
                 continue
 
             with torch.no_grad():
-                _, attention_map = model(image_batch)
+                attention_map = model(image_batch)
                 attention_map = attention_map.detach()[0].cpu()
                 map_name = f"{dataset.label_to_name(label)}{'correct' if label == correct_label else ''}"
                 save_attention_map(attention_map, f"{image_dir}/{map_name}")
@@ -91,8 +105,9 @@ if __name__ == "__main__":
     parser.add_argument("--data_path", default="./datasets/sorted_downscaled", type=str)
     parser.add_argument("--models_root", default="./models", type=str)
     parser.add_argument("--output_path", default="./attention_maps", type=str)
-    parser.add_argument("--model", type=str, help='ResNet18, ResNet50, DenseNet, SEResNet50', required=True)
+    parser.add_argument("--model", type=str, help='ResNet18, ResNet50, DenseNet121, SEResNet50', required=True)
     parser.add_argument("--scale", type=float, help='Scale of the images. Must be 0.25, 0.5 or 1.0', required=True)
+    parser.add_argument("--layer", type=int, help='Layer to use for attention maps.', required=True)
     parser.add_argument("--cpu", action="store_true", help="Force using CPU")
 
     args = parser.parse_args()
@@ -109,6 +124,18 @@ if __name__ == "__main__":
     except KeyError:
         raise ValueError(f"Model {model_name} not supported. Choose from {[type.name for type in ModelType]}")
 
+    layer = args.layer
+    match model_type:
+        case ModelType.ResNet18:
+            assert layer in [1, 2, 3, 4], f"Layer {layer} not supported for ResNet18. Choose from [1, 2, 3, 4]"
+        case ModelType.ResNet50:
+            assert layer in [1, 2, 3, 4], f"Layer {layer} not supported for ResNet50. Choose from [1, 2, 3, 4]"
+        case ModelType.DenseNet121:
+            assert layer in [1, 2, 3, 4], f"Layer {layer} not supported for DenseNet121. Choose from [1, 2, 3, 4]"
+        case ModelType.SEResNet50:
+            assert layer in [1, 2, 3, 4], f"Layer {layer} not supported for SEResNet50. Choose from [1, 2, 3, 4]"
+
+
     device = torch.device("cpu" if args.cpu or not torch.cuda.is_available() else "cuda:0")
 
-    generate_attention_maps(model_type, scale, models_root, data_path, device)
+    generate_attention_maps(model_type, scale, models_root, data_path, device, layer)
