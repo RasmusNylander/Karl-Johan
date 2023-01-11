@@ -86,6 +86,9 @@ class Dataset(TorchDataset):
     def get_name_to_label(self):
         return self.name_to_label
 
+    def num_classes(self):
+        return len(self.get_image_classes())
+
 
 def make_dataloaders(
     batch_size=16,
