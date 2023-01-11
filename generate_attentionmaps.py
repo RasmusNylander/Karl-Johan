@@ -34,17 +34,18 @@ def create_injected_models(base_model: torch.nn.Module, num_classes: int) -> lis
 
 
 def generate_attention_maps(
-    model_type: ModelType,
-    scale: float,
-    models_root: str,
-    data_path: str,
-    device: torch.device,
+        model_type: ModelType,
+        scale: float,
+        models_root: str,
+        data_path: str,
+        device: torch.device,
 ):
     model_string_id = f"{model_type.name}_{str(int(scale * 100)).zfill(3)}"
 
     model_path = f"{models_root}/{model_string_id}.pth"
 
-    _, _, test_loader = make_dataloaders(num_workers=0, persistent_workers=False, data_path=data_path, batch_size=BATCH_SIZE, scale=scale)
+    _, _, test_loader = make_dataloaders(num_workers=0, persistent_workers=False, data_path=data_path,
+                                         batch_size=BATCH_SIZE, scale=scale)
 
     dataset: Dataset = test_loader.dataset
 
@@ -64,7 +65,6 @@ def generate_attention_maps(
         os.makedirs(image_dir, exist_ok=True)
 
         image_batch = image_batch.to(device)
-
 
         correct_label = batch_labels[0].argmax(dim=0).item()
         prediction, attention_map = models_best(image_batch)
