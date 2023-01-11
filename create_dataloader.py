@@ -92,6 +92,9 @@ class Dataset(TorchDataset):
     def label_to_name(self, label: int) -> str:
         return self.image_classes[label]
 
+    def get_name_of_image(self, idx: int) -> str:
+        return self.image_paths[idx].split("/")[-1].split(".")[0]
+
 
 def make_dataloaders(
     batch_size=16,
