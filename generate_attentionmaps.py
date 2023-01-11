@@ -26,14 +26,13 @@ def generate_attention_maps(
     scale: float,
     models_root: str,
     data_path: str,
+    device: torch.device,
 ):
     model_string_id = f"{model_type.name}_{str(int(scale * 100)).zfill(3)}"
 
     model_path = f"{models_root}/{model_string_id}.pth"
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    _, _, test_loader = make_dataloaders(num_workers=0, persistent_workers=False, data_path=data_path,
-                                         batch_size=BATCH_SIZE, scale=scale)
+    _, _, test_loader = make_dataloaders(num_workers=0, persistent_workers=False, data_path=data_path, batch_size=BATCH_SIZE, scale=scale)
 
     dataset: Dataset = test_loader.dataset
 
@@ -79,6 +78,7 @@ if __name__ == "__main__":
     parser.add_argument("--output_path", default="./attention_maps", type=str)
     parser.add_argument("--model", type=str, help='ResNet18, ResNet50, DenseNet, SEResNet50', required=True)
     parser.add_argument("--scale", type=float, help='Scale of the images. Must be 0.25, 0.5 or 1.0', required=True)
+    parser.add_argument("--cpu", action="store_true", help="Force using CPU")
 
     args = parser.parse_args()
     data_path = args.data_path
@@ -94,4 +94,6 @@ if __name__ == "__main__":
     except KeyError:
         raise ValueError(f"Model {model_name} not supported. Choose from {[type.name for type in ModelType]}")
 
-    generate_attention_maps(model_type, scale, models_root, data_path)
+    device = torch.device("cpu" if args.cpu or not torch.cuda.is_available() else "cuda:0")
+
+    generate_attention_maps(model_type, scale, models_root, data_path, device)
