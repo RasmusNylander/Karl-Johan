@@ -3,30 +3,28 @@ import glob
 from skimage import io
 from tifffile import imwrite
 import os
+from tqdm import tqdm
 
-image_paths = glob.glob("**/**/*.tif")
+scales = [0.25, 0.5]
+scale_names = ["64x32x32", "128x64x64"]
 
 image_paths = glob.glob("**[a-zA-Z]/**/*.tif")
 
 for image_path in tqdm(image_paths):
     image = io.imread(image_path)
-    im_05 = zoom(image,0.5)
-    im_025 = zoom(image,0.25)
+
+    for scale, scale_name in zip(scales, scale_names):
+        path_components = image_path.split(os.path.sep)
+        path_components[0] += "_" + scale_name
+        new_path = os.path.join(*path_components)
+        os.makedirs(os.path.split(new_path)[0], exist_ok=True)
+
+        scaled_image = zoom(image, scale)
+        imwrite(new_path, scaled_image)
+
     
-    path_05 = image_path.split("/")
-    path_05[0] = path_05[0]+"_128x64x64"
-    path_05 = "/".join(path_05)
-    path_025 = image_path.split("/")
-    path_025[0] = path_025[0]+"_64x32x32"
-    path_025 = "/".join(path_025)
-    
-    os.makedirs("/".join(path_05.split("/")[:-1]), exist_ok=True)
-    os.makedirs("/".join(path_025.split("/")[:-1]), exist_ok=True)
-    
-    
-    imwrite(path_05,im_05)
-    imwrite(path_025,im_025)
-    
-os.makedirs("sorted_downscaled_128x64x64/GH", exist_ok=True)
-os.makedirs("sorted_downscaled_64x32x32/GH", exist_ok=True)
+for dataset in ["sorted_downscaled", "masked"]:
+    for scale_name in scale_names:
+        directory = f"{dataset}_{scale_name}/GH"
+        os.makedirs(directory, exist_ok=True)
     
