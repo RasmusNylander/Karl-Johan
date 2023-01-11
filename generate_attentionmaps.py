@@ -32,7 +32,6 @@ def generate_attention_maps(
     model_path = f"{models_root}/{model_string_id}.pth"
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    device = torch.device("cpu")
     _, _, test_loader = make_dataloaders(num_workers=0, persistent_workers=False, data_path=data_path,
                                          batch_size=BATCH_SIZE, scale=scale)
 
