@@ -98,7 +98,7 @@ def main(data_path: str, output_path: str, model_pick: ModelType, batch_size: in
         init_logging(f"{run_log_prefix} {model_name}", learning_rate, num_epochs, batch_size, model_pick, scale, model)
 
     t = time.strftime("%y%m%d_%H%M%S")
-    output_root = os.path.join(output_path, f'{model_pick}_{t}')
+    output_root = os.path.join(output_path, f'{run_log_prefix} {model_name}_{t}')
     if not os.path.exists(output_root):
         os.makedirs(output_root)
 
