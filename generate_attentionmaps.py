@@ -101,9 +101,6 @@ def generate_attention_maps(
                 save_attention_map(attention_map, f"{image_dir}/{map_name}")
                 model.zero_grad()
 
-def do_everything():
-    for model_type, scale, layer in itertools.product(ModelType, [0.25, 0.5, 1.0], [1, 2, 3, 4]):
-            generate_attention_maps(model_type, scale, models_root, data_path, device, layer, False)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate attention maps for a model")
@@ -122,19 +119,21 @@ if __name__ == "__main__":
     output_path: str = args.output_path
     device = torch.device("cpu" if args.cpu or not torch.cuda.is_available() else "cuda:0")
 
-    if (args.do_everything):
-        do_everything()
+    scales: float = args.scales
+    for scale in scales:
+        assert scale in [0.25, 0.5, 1.0], f"scale of {scale} not yet supported. Scale must be either 0.25, 0.5 or 1.0"
 
-    scale: float = args.scale
-    assert scale in [0.25, 0.5, 1.0], f"scale of {scale} not yet supported. Scale must be either 0.25, 0.5 or 1.0"
+    model_names = args.models
+    model_types: list[ModelType] = []
+    for model_name in model_names:
+        try:
+            model_types.append(ModelType[model_name])
+        except KeyError:
+            raise ValueError(f"Model {model_name} not supported. Choose from {[type.name for type in ModelType]}")
 
-    model_name = args.model
-    try:
-        model_type = ModelType[model_name]
-    except KeyError:
-        raise ValueError(f"Model {model_name} not supported. Choose from {[type.name for type in ModelType]}")
+    layers: list[int] = args.layers
+    for layer in layers:
+        assert layer in [1, 2, 3, 4], f"Layer {layer} not yet supported. Layer must be either 1, 2, 3 or 4"
 
-    layer: int = args.layer
-    assert layer in [1, 2, 3, 4], f"Layer {layer} not supported. Choose from [1, 2, 3, 4]"
-
-    generate_attention_maps(model_type, scale, models_root, data_path, device, layer)
+    for model_type, scale, layer in itertools.product(model_types, scales, layers, desc="Generating attention maps", unit="model"):
+        generate_attention_maps(model_type, scale, models_root, data_path, device, layer, False)
