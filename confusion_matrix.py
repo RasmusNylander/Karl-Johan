@@ -32,7 +32,7 @@ def create_confusion(model,data_loader):
 
 if __name__=="__main__":
     MODELS_ROOT = "./models"
-    DATA_PATH = "./datasets/sorted_downscaled"
+    DATA_PATH = "./datasets/MNInSecT"
     
     scales = [0.25, 0.5, 1.0]
     for model_type in ModelType:
@@ -47,7 +47,7 @@ if __name__=="__main__":
             _,_,test_loader = make_dataloaders(
                 batch_size=10,
                 seed=69420,
-                data_path="./datasets/sorted_downscaled",
+                data_path=DATA_PATH,
                 pin_memory=False,
                 as_rgb=False,
                 scale=scale
