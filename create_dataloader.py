@@ -27,9 +27,9 @@ class Dataset(TorchDataset):
             dataset_prefix = "128x64x64"
         elif scale == 0.25:
             dataset_prefix = "64x32x32"
-        if masked:
-            dataset_prefix += "_masked"
 
+        dataset_suffix = "_masked" if masked else ""
+        dataset_path = f"{data_path}/{dataset_prefix}{dataset_suffix}"
         assert len(DatasetType) == 3
         match type:
             case DatasetType.Train:
@@ -42,9 +42,9 @@ class Dataset(TorchDataset):
 
 
 
-        self.image_paths = [f"{data_path}{dataset_prefix}/{path}" for path in self.image_paths]
+        self.image_paths = [f"{dataset_path}/{path}" for path in self.image_paths]
         self.image_classes = [
-            os.path.split(d)[1] for d in glob.glob(data_path + "/*") if os.path.isdir(d)
+            os.path.split(d)[1] for d in glob.glob(dataset_path + "/*") if os.path.isdir(d)
         ]
         self.image_classes.sort()
         self.name_to_label = {c: id for id, c in enumerate(self.image_classes)}
