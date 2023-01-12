@@ -84,7 +84,7 @@ def main(data_path: str, output_path: str, model_pick: ModelType, batch_size: in
     label_to_name = {v: k for k, v in name_to_label.items()}
 
     learning_rate = 1e-3
-    milestones = [0.5 * num_epochs, 0.75 * num_epochs]
+    milestones = [0.1 * num_epochs, 0.5 * num_epochs, 0.85 * num_epochs]
     gamma = 0.1
 
     model = get_model(model_pick).to(device)
