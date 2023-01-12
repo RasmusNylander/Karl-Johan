@@ -56,7 +56,7 @@ class Dataset(TorchDataset):
     def __len__(self) -> int:
         return len(self.image_paths)  # len(self.data)
 
-    def __getitem__(self, idx) -> Tensor:
+    def __getitem__(self, idx) -> tuple[Tensor, Tensor]:
         image_path = self.image_paths[idx]
 
         image = io.imread(image_path)
