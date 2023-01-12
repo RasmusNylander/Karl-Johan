@@ -6,17 +6,18 @@ from tifffile import imwrite
 import os
 from tqdm import tqdm
 
+original_prefix = "256x128x128"
 scales = [0.25, 0.5]
-scale_names = ["64x32x32", "128x64x64"]
+scale_prefixes = ["64x32x32", "128x64x64"]
 
-image_paths = glob.glob("**[a-zA-Z]/**/*.tif")
+image_paths = glob.glob(f"**/{original_prefix}*/**/*.tif")
 
 def scale_and_save_image(image_path, scales, scale_names):
     image = io.imread(image_path)
 
     for scale, scale_name in zip(scales, scale_names):
         path_components = image_path.split(os.path.sep)
-        path_components[0] += "_" + scale_name
+        path_components[1] = scale_name
         new_path = os.path.join(*path_components)
         os.makedirs(os.path.split(new_path)[0], exist_ok=True)
         
@@ -25,13 +26,13 @@ def scale_and_save_image(image_path, scales, scale_names):
             imwrite(new_path, scaled_image)
 
 # for image_path in tqdm(image_paths):
-#     scale_and_save_image(image_path, scales, scale_names)
+#     scale_and_save_image(image_path, scales, scale_prefixes)
 
-Parallel(n_jobs=16)(delayed(scale_and_save_image)(image_path, scales, scale_names) for image_path in tqdm(image_paths, unit="image", desc="Scaling images"))
+Parallel(n_jobs=16)(delayed(scale_and_save_image)(image_path, scales, scale_prefixes) for image_path in tqdm(image_paths, unit="image", desc="Scaling images"))
 
 
-for dataset in ["sorted_downscaled", "masked"]:
-    for scale_name in scale_names:
-        directory = f"{dataset}_{scale_name}/GH"
+for dataset in ["", "_masked"]:
+    for scale_name in scale_prefixes:
+        directory = f"{scale_name}{dataset}/GH"
         os.makedirs(directory, exist_ok=True)
     
