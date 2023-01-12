@@ -1,7 +1,7 @@
 import os
 import shutil
 
-data_path = "sorted_downscaled"
+data_path = "MNInSecT/256x128x128"
 
 old_file_names = ['cf_002_downscaled.tif',
                   'cf_003_downscaled.tif','cf_004_downscaled.tif',
