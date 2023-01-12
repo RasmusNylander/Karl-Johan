@@ -6,10 +6,10 @@ import torch
 import numpy as np
 import pandas as pd
 from skimage import io
+from torch import Tensor
 from torch.utils.data import Dataset as TorchDataset
 from torch.utils.data import DataLoader
 from torchvision.transforms import RandomRotation
-from scipy.ndimage import zoom
 
 
 class DatasetType(Enum):
@@ -53,10 +53,10 @@ class Dataset(TorchDataset):
         self.transforms = transforms
         self.rot = RandomRotation(180)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.image_paths)  # len(self.data)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx) -> Tensor:
         image_path = self.image_paths[idx]
 
         image = io.imread(image_path)
