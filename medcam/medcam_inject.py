@@ -263,7 +263,8 @@ def forward(self, batch, label=None, mask=None, raw_input=None):
                 scores = self._process_attention_maps(
                     attention_map, mask, batch_size, channels, raw_input
                 )
-                output = self._replace_or_return(output, attention_map, batch.shape[2:])
+                # output = self._replace_or_return(output, attention_map, batch.shape[2:])
+                output = self._replace_or_return(output, attention_map, data_shape)
             else:  # If no attention maps could be extracted
                 self.medcam_dict["current_attention_map"] = None
                 self.medcam_dict["current_layer"] = None
