@@ -104,14 +104,13 @@ def generate_attention_maps(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate attention maps for a model")
-    parser.add_argument("--data_path", default="./datasets/sorted_downscaled", type=str)
+    parser.add_argument("--data_path", default="./datasets/MNInSecT", type=str)
     parser.add_argument("--models_root", default="./models", type=str)
     parser.add_argument("--output_path", default="./attention_maps", type=str)
     parser.add_argument("--models", type=str, nargs="+", help='ResNet18, ResNet50, DenseNet121, SEResNet50')
     parser.add_argument("--scales", type=float, nargs="+", help='Scale of the images. Must be 0.25, 0.5 or 1.0')
     parser.add_argument("--layers", type=int, nargs="+", help='Layer to use for attention maps.')
     parser.add_argument("--cpu", action="store_true", help="Force using CPU")
-    parser.add_argument("--do_everything", action="store_true", help="Create attention map for each layer of each scale of each model")
 
     args = parser.parse_args()
     data_path: str = args.data_path
