@@ -65,7 +65,7 @@ def test(model, dataloader: DataLoader, loss_function: _Loss, device: Device) ->
 
         return TestResult(loss.mean().item(), accuracy_score.mean().item(), area_under_curve.mean(dim=1))
 
-def main(data_path: str, output_path: str, model_pick: ModelType, batch_size: int, num_epochs: int, scale: float, enable_logging: bool, run_log_prefix: str):
+def main(data_path: str, output_path: str, model_pick: ModelType, batch_size: int, num_epochs: int, scale: float, enable_logging: bool, run_log_prefix: str, masked: bool):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     train_loader, validation_loader, test_loader = make_dataloaders(
@@ -75,7 +75,8 @@ def main(data_path: str, output_path: str, model_pick: ModelType, batch_size: in
         transforms=True,
         pin_memory=False,
         as_rgb=False,
-        scale=scale
+        scale=scale,
+        masked=masked
     )
         
     num_classes = len(train_loader.dataset.get_image_classes())
@@ -165,6 +166,7 @@ if __name__ == "__main__":
     parser.add_argument("--scale", default="1", type=float)
     parser.add_argument("--wandb_prefix", default=None, type=str, help="prefix for wandb project name. It may be whitespace in which case no prefix is used but it must be specified.")
     parser.add_argument("--no_logging", action="store_true", help="if set, no logging is done")
+    parser.add_argument("--masked", action="store_true", help="Use the masked dataset")
 
     args = parser.parse_args()
     data_path = args.data_path
@@ -173,6 +175,7 @@ if __name__ == "__main__":
     batch_size = args.batch_size
     num_epochs = args.num_epochs
     scale = args.scale
+    masked = args.masked
 
     assert scale in [0.25, 0.5, 1.0], f"scale of {scale} not yet supported. Scale must be either 0.25, 0.5 or 1.0"
 
@@ -187,4 +190,4 @@ if __name__ == "__main__":
     else:
         wandb_prefix = ""
 
-    main(data_path, output_path, model_type, batch_size, num_epochs, scale, enable_logging, wandb_prefix)
+    main(data_path, output_path, model_type, batch_size, num_epochs, scale, enable_logging, wandb_prefix, masked)

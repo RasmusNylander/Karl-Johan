@@ -19,9 +19,10 @@ def scale_and_save_image(image_path, scales, scale_names):
         path_components[0] += "_" + scale_name
         new_path = os.path.join(*path_components)
         os.makedirs(os.path.split(new_path)[0], exist_ok=True)
-
-        scaled_image = zoom(image, scale)
-        imwrite(new_path, scaled_image)
+        
+        if not os.path.exists(new_path):
+            scaled_image = zoom(image, scale)
+            imwrite(new_path, scaled_image)
 
 # for image_path in tqdm(image_paths):
 #     scale_and_save_image(image_path, scales, scale_names)
