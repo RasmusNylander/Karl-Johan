@@ -158,7 +158,7 @@ def main(data_path: str, output_path: str, model_pick: ModelType, batch_size: in
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="RUN model on insect data")
-    parser.add_argument("--data_path", default="./datasets/sorted_downscaled", type=str)
+    parser.add_argument("--data_path", default="./datasets/MNInSecT", type=str)
     parser.add_argument("--output_path", default="./output", type=str)
     parser.add_argument("--model", default="ResNet18", type=str, help='ResNet18, ResNet50, DenseNet, SEResNet50')
     parser.add_argument("--batch_size", default="8", type=int)
