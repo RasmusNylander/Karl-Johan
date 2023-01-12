@@ -22,14 +22,13 @@ class Dataset(TorchDataset):
     def __init__(self, data_path, type: DatasetType, seed=42, as_rgb=False, transforms=False, scale: float = 1.0, masked: bool = False):
         assert scale == 1.0 or scale == 0.5 or scale == 0.25, "Scale must be 1.0, 0.5 or 0.25"
         if scale == 1.0:
-            scale_path_offset = ""
+            dataset_prefix = "256x128x128"
         if scale == 0.5:
-            scale_path_offset = "_128x64x64"
+            dataset_prefix = "128x64x64"
         elif scale == 0.25:
-            scale_path_offset = "_64x32x32"
+            dataset_prefix = "64x32x32"
         if masked:
-            temp = os.path.split(data_path)
-            data_path = os.path.join(temp[0],'masked')
+            dataset_prefix += "_masked"
 
         assert len(DatasetType) == 3
         match type:
@@ -43,7 +42,7 @@ class Dataset(TorchDataset):
 
 
 
-        self.image_paths = [f"{data_path}{scale_path_offset}/{path}" for path in self.image_paths]
+        self.image_paths = [f"{data_path}{dataset_prefix}/{path}" for path in self.image_paths]
         self.image_classes = [
             os.path.split(d)[1] for d in glob.glob(data_path + "/*") if os.path.isdir(d)
         ]
@@ -102,7 +101,7 @@ class Dataset(TorchDataset):
 def make_dataloaders(
     batch_size=16,
     seed=42,
-    data_path="./datasets/sorted_downscaled",
+    data_path="./datasets/MNInSecT",
     num_workers=4,
     pin_memory=True,
     persistent_workers=True,
