@@ -1,11 +1,11 @@
 import argparse
 import copy
+
+from tifffile import tifffile
 from tqdm.contrib import itertools
 import os
 
-import numpy as np
 import torch
-from monai.data.image_reader import nib
 from torch import Tensor
 from tqdm import tqdm
 
@@ -19,10 +19,7 @@ assert BATCH_SIZE == 1
 
 def save_attention_map(attention_map: Tensor, path: str):
     first_channel = attention_map[0]
-    first_channel = first_channel.numpy().transpose(1, 2, 0)
-    image_nifti = nib.Nifti1Image(first_channel, affine=np.eye(4))
-    nib.save(image_nifti, f"{path}.nii")
-
+    tifffile.imwrite(f"{path}.tif", first_channel.numpy())
 
 def create_injected_models(base_model: torch.nn.Module, num_classes: int, layer_name: str) -> list[torch.nn.Module]:
     models = [copy.copy(base_model)]
@@ -84,8 +81,8 @@ def generate_attention_maps(
 
         correct_label = batch_labels[0].argmax(dim=0).item()
         prediction, attention_map = model_best(image_batch)
-        model_best.zero_grad()
         attention_map = attention_map.detach()[0].cpu()
+        model_best.zero_grad()
         prediction_label = prediction[0].argmax(dim=0).item()
         map_name = f"{dataset.label_to_name(prediction_label)}_prediction{'_correct' if prediction_label == correct_label else ''}"
         save_attention_map(attention_map, f"{image_dir}/{map_name}")
