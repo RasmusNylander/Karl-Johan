@@ -2,9 +2,9 @@ import os
 
 import pandas as pd
 
-CSV_PATH = "./sorted_downscaled/train_temp.csv"
-SUBSET_PATH = "./sorted_downscaled/validation.csv"
-DIFFERENCE_PATH = "./sorted_downscaled/train.csv"
+CSV_PATH = "./MNInSecT/train_temp.csv"
+SUBSET_PATH = "./MNInSecT/validation.csv"
+DIFFERENCE_PATH = "./MNInSecT/train.csv"
 SAMPLE_PERCENTAGE = 0.20
 # SEED = 9000 + 4206969420
 SEED = 8963514
