@@ -5,7 +5,7 @@ import numpy as np
 from tqdm import tqdm
 import os
 
-if os.path.exists("./datasets/masked/")
+if os.path.exists("./datasets/masked/"):
     files = glob.glob("./datasets/masked/**/*.tif")
     for file in tqdm(files):
         im = io.imread(file)
