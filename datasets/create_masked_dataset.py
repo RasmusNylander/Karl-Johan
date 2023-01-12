@@ -36,14 +36,15 @@ def create_mask(im,intensity_threshold,iteration):
     return mask
 
 if __name__=="__main__":
-    files = glob.glob("sorted_downscaled/**/*.tif")
+    files = glob.glob("**/256x128x128/**/*.tif")
     for file in tqdm(files):
         im = io.imread(file)
         mask = create_mask(im, 100, 0)
         im[mask == 0] = 0
-        new_path = os.path.join("masked", remove_first_directory(file))
-        os.makedirs(os.path.split(new_path)[0], exist_ok=True)
-        tifffile.imwrite(new_path, im)
+        path_components = file.split(os.path.sep)
+        path_components[1] += "_masked"
+        os.makedirs(os.path.join(path_components[0:-1]), exist_ok=True)
+        tifffile.imwrite(os.path.join(*path_components), im)
         
-    os.makedirs("masked/GH", exist_ok=True)
-    os.makedirs("masked/GH", exist_ok=True)
+    os.makedirs("MNInSecT/256x128x128_masked/GH", exist_ok=True)
+    os.makedirs("MNInSecT/256x128x128_masked/GH", exist_ok=True)
