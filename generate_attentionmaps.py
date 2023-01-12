@@ -50,14 +50,17 @@ def generate_attention_maps(
         data_path: str,
         device: torch.device,
         layer: int,
+        dataset_variant: str,
         leave_progress_bar=True
 ):
     model_string_id = f"{model_type.name}_{str(int(scale * 100)).zfill(3)}"
 
-    model_path = f"{models_root}/{model_string_id}.pth"
+    masked = dataset_variant == "masked"
+
+    model_path = f"{models_root}/{model_string_id}{'_masked' if masked else ''}.pth"
 
     _, _, test_loader = make_dataloaders(num_workers=0, persistent_workers=False, data_path=data_path,
-                                         batch_size=BATCH_SIZE, scale=scale, pin_memory=False)
+                                         batch_size=BATCH_SIZE, scale=scale, pin_memory=False, masked=masked)
 
     dataset: Dataset = test_loader.dataset
 
@@ -108,12 +111,16 @@ if __name__ == "__main__":
     parser.add_argument("--scales", type=float, nargs="+", help='Scale of the images. Must be 0.25, 0.5 or 1.0')
     parser.add_argument("--layers", type=int, nargs="+", help='Layer to use for attention maps.')
     parser.add_argument("--cpu", action="store_true", help="Force using CPU")
+    parser.add_argument("--dataset_variant", type=str, default="original", help="Variant of MNInSecT to use. Must be 'original' or 'masked'")
 
     args = parser.parse_args()
     data_path: str = args.data_path
     models_root: str = args.models_root
     output_path: str = args.output_path
     device = torch.device("cpu" if args.cpu or not torch.cuda.is_available() else "cuda:0")
+    dataset_variant = args.dataset_variant
+    if dataset_variant not in ["original", "masked"]:
+        raise ValueError(f"Unknown dataset variant {dataset_variant}. Must be 'original' or 'masked'")
 
     scales: float = args.scales
     for scale in scales:
@@ -132,4 +139,4 @@ if __name__ == "__main__":
         assert layer in [1, 2, 3, 4], f"Layer {layer} not yet supported. Layer must be either 1, 2, 3 or 4"
 
     for model_type, scale, layer in itertools.product(model_types, scales, layers, desc="Generating attention maps", unit="model"):
-        generate_attention_maps(model_type, scale, models_root, data_path, device, layer, False)
+        generate_attention_maps(model_type, scale, models_root, data_path, device, layer, dataset_variant, False)
