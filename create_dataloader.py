@@ -19,7 +19,7 @@ class DatasetType(Enum):
 
 
 class Dataset(TorchDataset):
-    def __init__(self, data_path, type: DatasetType, seed=42, as_rgb=False, transforms=False, scale: float = 1.0):
+    def __init__(self, data_path, type: DatasetType, seed=42, as_rgb=False, transforms=False, scale: float = 1.0, masked: bool = False):
         assert scale == 1.0 or scale == 0.5 or scale == 0.25, "Scale must be 1.0, 0.5 or 0.25"
         if scale == 1.0:
             scale_path_offset = ""
@@ -27,6 +27,9 @@ class Dataset(TorchDataset):
             scale_path_offset = "_128x64x64"
         elif scale == 0.25:
             scale_path_offset = "_64x32x32"
+        if masked:
+            temp = os.path.split(data_path)
+            data_path = os.path.join(temp[0],'masked')
 
         assert len(DatasetType) == 3
         match type:
@@ -106,14 +109,15 @@ def make_dataloaders(
     as_rgb=False,
     transforms=False,
     scale: float = 1.0,
+    masked: bool = False,
 ) -> tuple[DataLoader, DataLoader, DataLoader]:
     """
     Creates a train and test dataloader with a variable batch size and image shape.
     And using a weighted sampler for the training dataloader to have balanced mini-batches when training.
     """
-    train_set = Dataset(data_path=data_path, type=DatasetType.Train, seed=seed, as_rgb=as_rgb, transforms=transforms, scale=scale)
-    validation_set = Dataset(data_path=data_path, type=DatasetType.Validation, seed=seed, as_rgb=as_rgb, scale=scale)
-    test_set = Dataset(data_path=data_path, type=DatasetType.Test, seed=seed, as_rgb=as_rgb, scale=scale)
+    train_set = Dataset(data_path=data_path, type=DatasetType.Train, seed=seed, as_rgb=as_rgb, transforms=transforms, scale=scale, masked=masked)
+    validation_set = Dataset(data_path=data_path, type=DatasetType.Validation, seed=seed, as_rgb=as_rgb, scale=scale, masked=masked)
+    test_set = Dataset(data_path=data_path, type=DatasetType.Test, seed=seed, as_rgb=as_rgb, scale=scale, masked=masked)
 
     train_loader = DataLoader(
         train_set,
