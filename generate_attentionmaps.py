@@ -108,7 +108,7 @@ if __name__ == "__main__":
     parser.add_argument("--scales", type=float, nargs="+", help='Scale of the images. Must be 0.25, 0.5 or 1.0')
     parser.add_argument("--layers", type=int, nargs="+", help='Layer to use for attention maps.')
     parser.add_argument("--cpu", action="store_true", help="Force using CPU")
-    parser.add_argument("--dataset_variants", type=str, nargs="+", default="original", help="Variant of MNInSecT to use. Must be 'original' or 'masked'")
+    parser.add_argument("--dataset_variants", type=str, nargs="+", default="original", help="Variant of MNInSecT to use. Must be 'original' or 'masked'", required=True)
 
     args = parser.parse_args()
     data_path: str = args.data_path
