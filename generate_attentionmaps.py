@@ -64,7 +64,7 @@ def generate_attention_maps(
 
     dataset: Dataset = test_loader.dataset
 
-    model = get_pretrained(model_type, dataset_variant.augmentation, dataset_variant.scale, models_root).to(device)
+    model = get_pretrained(model_type, dataset_variant, models_root).to(device)
     model.eval()
 
     layer_name = layer_to_layer_name(model_type, layer)

@@ -97,7 +97,7 @@ def main(data_path: str, output_root: str, model_pick: ModelType, batch_size: in
     loss_function = torch.nn.CrossEntropyLoss()
 
     if enable_logging:
-        init_logging(f"{run_log_prefix} {model_type.name}", learning_rate, num_epochs, batch_size, model_pick, scale, model)
+        init_logging(f"{run_log_prefix} {model_type.name}", learning_rate, num_epochs, batch_size, model_pick, dataset_variant.scale, model)
 
     t = time.strftime("%y%m%d_%H%M%S")
     output_path = os.path.join(output_root, f'{run_log_prefix} {model_type.name}_{t}')
@@ -133,7 +133,7 @@ def main(data_path: str, output_root: str, model_pick: ModelType, batch_size: in
 
                 progress_bar.set_description(f"Epoch {epoch} – Best AUC: {validation_metrics.auc.mean().item():.5} – Best ACC: {validation_metrics.acc:.5}")
 
-    model = get_pretrained(model_pick, augmentation, scale, output_path).to(device)
+    model = get_pretrained(model_pick, dataset_variant, output_path).to(device)
 
     train_metrics = test(model, train_loader,  loss_function, device)
     validation_metrics = test(model, validation_loader, loss_function, device)

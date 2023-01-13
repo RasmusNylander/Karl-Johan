@@ -27,8 +27,9 @@ def get_model_name(type: ModelType, variant: MNInSecTVariant) -> str:
     scale_suffix = f"_{str(variant.scale).zfill(3)}"
     return f"{type.name}{scale_suffix}{variant.augmentation_suffix()}"
 
-def get_pretrained(type: ModelType, augmentation: Augmentation, scale: DatasetScale, models_root: str, map_location=None) -> torch.nn.Module:
-    name = get_model_name(type, MNInSecTVariant(augmentation, scale))
+
+def get_pretrained(type: ModelType, variant: MNInSecTVariant, models_root: str, map_location=None) -> torch.nn.Module:
+    name = get_model_name(type, variant)
     model_path = f"{models_root}/{name}.pth"
     model = get_model(type)
     model.load_state_dict(torch.load(model_path, map_location=map_location)['net'], strict=True)
