@@ -119,13 +119,7 @@ if __name__ == "__main__":
     dataset_augmentations = [Augmentation.parse_from_string(string) for string in args.dataset_variants]
     scales = [DatasetScale.from_float(scale) for scale in args.scales]
 
-    model_names = args.models
-    model_types: list[ModelType] = []
-    for model_name in model_names:
-        try:
-            model_types.append(ModelType[model_name])
-        except KeyError:
-            raise ValueError(f"Model {model_name} not supported. Choose from {[type.name for type in ModelType]}")
+    model_types = [ModelType.parse_from_string(model) for model in args.models]
 
     layers: list[int] = args.layers
     for layer in layers:

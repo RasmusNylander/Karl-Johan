@@ -170,13 +170,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
     data_path = args.data_path
     output_path = args.output_path
-    model_name = args.model
+    model_type = ModelType.parse_from_string(args.model)
     batch_size = args.batch_size
     num_epochs = args.num_epochs
     scale = DatasetScale.from_float(args.scale)
     dataset_variant = Augmentation.parse_from_string(args.dataset_variant)
-
-    model_type = ModelType[model_name]
 
     enable_logging = not args.no_logging
 

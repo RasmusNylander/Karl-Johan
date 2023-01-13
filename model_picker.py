@@ -11,6 +11,21 @@ class ModelType(Enum):
     DenseNet121 = auto(),
     SEResNet50 = auto(),
 
+    @staticmethod
+    def parse_from_string(string: str):
+        assert len(ModelType) == 4
+        match string.lower():
+            case "resnet18":
+                return ModelType.ResNet18
+            case "resnet50":
+                return ModelType.ResNet50
+            case "densenet121":
+                return ModelType.DenseNet121
+            case "seresnet50":
+                return ModelType.SEResNet50
+            case _:
+                raise ValueError(f"Unknown model: {string}. Valid models are: {[model.name for model in ModelType]}")
+
 def get_model(type: ModelType) -> torch.nn.Module:
     match type:
         case ModelType.ResNet18:
