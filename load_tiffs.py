@@ -4,7 +4,10 @@ import os
 TIFF_ROOT = "/Karl-Johan"  # Just put the absolute path to Karl-Johan
 
 reader = TIFFReader(FileName=f"{TIFF_ROOT}/temp_image.tif")
-# help(reader)
-Show()
-Render()
+disp = GetDisplayProperties()
+disp.Representation = "Volume"
 
+display = Show(reader)
+ColorBy(display, ('POINTS', 'Tiff Scalars'))  # Sets the correct data to be used for coloring
+
+Render()
