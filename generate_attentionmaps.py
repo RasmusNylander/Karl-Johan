@@ -117,9 +117,6 @@ if __name__ == "__main__":
     output_path: str = args.output_path
     device = torch.device("cpu" if args.cpu or not torch.cuda.is_available() else "cuda:0")
     dataset_augmentations = [Augmentation.parse_from_string(string) for string in args.dataset_variants]
-
-    for scale in args.scales:
-        assert scale in [0.25, 0.5, 1.0], f"scale of {scale} not yet supported. Scale must be either 0.25, 0.5 or 1.0"
     scales = [DatasetScale.from_float(scale) for scale in args.scales]
 
     model_names = args.models

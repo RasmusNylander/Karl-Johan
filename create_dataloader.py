@@ -38,12 +38,15 @@ class DatasetScale(Enum):
     @staticmethod
     def from_float(scale: float):
         assert len(DatasetScale) == 3
-        if scale == 0.25:
-            return DatasetScale.Scale25
-        elif scale == 0.5:
-            return DatasetScale.Scale50
-        elif scale == 1.0:
-            return DatasetScale.Scale100
+        match scale:
+            case 0.25:
+                return DatasetScale.Scale25
+            case 0.5:
+                return DatasetScale.Scale50
+            case 1.0:
+                return DatasetScale.Scale100
+            case _:
+                raise ValueError(f"Invalid scale: {scale}")
 
     def __str__(self):
         assert len(DatasetScale) == 3
