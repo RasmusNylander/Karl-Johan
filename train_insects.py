@@ -65,8 +65,7 @@ def test(model, dataloader: DataLoader, loss_function: _Loss, device: Device) ->
 
         return TestResult(loss.mean().item(), accuracy_score.mean().item(), area_under_curve.mean(dim=1))
 
-def main(data_path: str, output_root: str, model_pick: ModelType, batch_size: int, num_epochs: int, scale: DatasetScale, enable_logging: bool, run_log_prefix: str, augmentation: Augmentation):
-    dataset_variant = MNInSecTVariant(augmentation, scale)
+def main(data_path: str, output_root: str, model_pick: ModelType, dataset_variant: MNInSecTVariant, batch_size: int, num_epochs: int, enable_logging: bool, run_log_prefix: str):
     model_name = get_model_name(model_pick, dataset_variant)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -173,16 +172,20 @@ if __name__ == "__main__":
     model_type = ModelType.parse_from_string(args.model)
     batch_size = args.batch_size
     num_epochs = args.num_epochs
-    scale = DatasetScale.from_float(args.scale)
-    dataset_variant = Augmentation.parse_from_string(args.dataset_variant)
+
+    dataset_variant = MNInSecTVariant(
+        DatasetScale.from_float(args.scale),
+        Augmentation.parse_from_string(args.dataset_variant)
+    )
 
     enable_logging = not args.no_logging
 
-    if enable_logging:
-        if args.wandb_prefix == None:
+    match enable_logging, args.wandb_prefix:
+        case True, None:
             raise ValueError("No weights and biases prefix specified.")
-        wandb_prefix = args.wandb_prefix.strip()
-    else:
-        wandb_prefix = ""
+        case True, _:
+            wandb_prefix = args.wandb_prefix.strip()
+        case False, _:
+            wandb_prefix = ""
 
-    main(data_path, output_path, model_type, batch_size, num_epochs, scale, enable_logging, wandb_prefix, dataset_variant)
+    main(data_path, output_path, model_type, dataset_variant, batch_size, num_epochs, enable_logging, wandb_prefix)
