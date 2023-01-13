@@ -1,3 +1,4 @@
+import itertools
 import os
 from dataclasses import dataclass
 from enum import Enum, auto
@@ -59,8 +60,14 @@ class Augmentation(Enum):
     Masked = auto()
     Threshold = auto()
 
+class MNInSecTVariantMeta(type):
+    def __iter__(cls):
+        iterator = itertools.product(Augmentation, DatasetScale)
+        for augmentation, scale in iterator:
+            yield MNInSecTVariant(augmentation, scale)
+
 @dataclass
-class MNInSecTVariant:
+class MNInSecTVariant(metaclass=MNInSecTVariantMeta):
     augmentation: Augmentation
     scale: DatasetScale
 
