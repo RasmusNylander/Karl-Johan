@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 from torchvision.transforms import RandomRotation
 
 
-class DatasetType(Enum):
+class SplitType(Enum):
     Train = auto()
     Validation = auto()
     Test = auto()
@@ -89,7 +89,7 @@ class MNInSecTVariant:
         return self.name()
 
 class Dataset(TorchDataset):
-    def __init__(self, MNInSecT_root: str, variant: MNInSecTVariant, type: DatasetType, seed=42, as_rgb=False, transforms=False):
+    def __init__(self, MNInSecT_root: str, variant: MNInSecTVariant, type: SplitType, seed=42, as_rgb=False, transforms=False):
 
         dataset_path = os.path.join(MNInSecT_root, variant.name())
         if not os.path.exists(dataset_path):
@@ -109,9 +109,9 @@ class Dataset(TorchDataset):
         self.rot = RandomRotation(180)
 
     @staticmethod
-    def dataset_images(MNInSecT_root: str, type: DatasetType) -> list[str]:
-        assert len(DatasetType) == 3
-        file_name = "train" if type == DatasetType.Train else "test" if type == DatasetType.Test else "validation"
+    def dataset_images(MNInSecT_root: str, type: SplitType) -> list[str]:
+        assert len(SplitType) == 3
+        file_name = "train" if type == SplitType.Train else "test" if type == SplitType.Test else "validation"
         return pd.read_csv(f"{MNInSecT_root}/{file_name}.csv", names=["files"], header=0).files.tolist()
 
     def __len__(self) -> int:
@@ -174,9 +174,9 @@ def make_dataloaders(
     Creates a train and test dataloader with a variable batch size and image shape.
     And using a weighted sampler for the training dataloader to have balanced mini-batches when training.
     """
-    train_set = Dataset(MNInSecT_root=data_path, type=DatasetType.Train, seed=seed, as_rgb=as_rgb, transforms=transforms, variant=variant)
-    validation_set = Dataset(MNInSecT_root=data_path, type=DatasetType.Validation, seed=seed, as_rgb=as_rgb, variant=variant)
-    test_set = Dataset(MNInSecT_root=data_path, type=DatasetType.Test, seed=seed, as_rgb=as_rgb, variant=variant)
+    train_set = Dataset(MNInSecT_root=data_path, type=SplitType.Train, seed=seed, as_rgb=as_rgb, transforms=transforms, variant=variant)
+    validation_set = Dataset(MNInSecT_root=data_path, type=SplitType.Validation, seed=seed, as_rgb=as_rgb, variant=variant)
+    test_set = Dataset(MNInSecT_root=data_path, type=SplitType.Test, seed=seed, as_rgb=as_rgb, variant=variant)
 
     train_loader = DataLoader(
         train_set,

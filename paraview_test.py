@@ -7,7 +7,7 @@ import torch
 import torch.nn.functional as F
 from monai.data.image_reader import nib
 
-from create_dataloader import Dataset, DatasetScale, DatasetType, Augmentation
+from create_dataloader import Dataset, DatasetScale, SplitType, Augmentation
 from model_picker import ModelType, get_model_name
 
 MODELS_ROOT = "./models"
@@ -30,7 +30,7 @@ model_string_id = get_model_name(model_type, dataset_variant, scale)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # device = torch.device("cpu")
-dataset: Dataset = Dataset(MNInSecT_root=DATA_PATH, type=DatasetType.Test, seed=69420, as_rgb=False, scale=scale, augmentation=dataset_variant)
+dataset: Dataset = Dataset(MNInSecT_root=DATA_PATH, type=SplitType.Test, seed=69420, as_rgb=False, scale=scale, augmentation=dataset_variant)
 
 image, batch_labels = dataset[59]
 image_name = dataset.get_name_of_image(0)
