@@ -133,7 +133,7 @@ def main(data_path: str, output_root: str, model_pick: ModelType, batch_size: in
 
                 progress_bar.set_description(f"Epoch {epoch} – Best AUC: {validation_metrics.auc.mean().item():.5} – Best ACC: {validation_metrics.acc:.5}")
 
-    model = get_pretrained(model_pick, dataset_variant, scale, output_path)
+    model = get_pretrained(model_pick, dataset_variant, scale, output_path).to(device)
 
     train_metrics = test(model, train_loader,  loss_function, device)
     validation_metrics = test(model, validation_loader, loss_function, device)
