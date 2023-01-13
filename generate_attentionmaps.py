@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from create_dataloader import Dataset, DatasetScale, MNInSecTVariant, make_dataloaders
 from medcam import medcam
-from model_picker import ModelType, get_model
+from model_picker import ModelType, get_model, get_pretrained, get_model_name
 
 BATCH_SIZE = 1
 assert BATCH_SIZE == 1
@@ -53,8 +53,8 @@ def generate_attention_maps(
         dataset_variant: MNInSecTVariant,
         leave_progress_bar=True
 ):
-    masked = dataset_variant == MNInSecTVariant.Masked
-    model_string_id = f"{model_type.name}_{str(int(scale.to_float() * 100)).zfill(3)}{'_masked' if masked else ''}"
+
+    model_string_id = get_model_name(model_type, dataset_variant, scale)
 
     model_path = f"{models_root}/{model_string_id}.pth"
 
@@ -63,9 +63,7 @@ def generate_attention_maps(
 
     dataset: Dataset = test_loader.dataset
 
-    model = get_model(model_type)
-    model.to(device)
-    model.load_state_dict(torch.load(model_path, map_location=device)['net'], strict=True)
+    model = get_pretrained(model_type, dataset_variant, scale, models_root).to(device)
     model.eval()
 
     layer_name = layer_to_layer_name(model_type, layer)
