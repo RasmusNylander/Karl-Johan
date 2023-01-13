@@ -31,8 +31,7 @@ if __name__=="__main__":
     MODELS_ROOT = "./models"
     DATA_PATH = "./datasets/MNInSecT"
 
-    for model_type, scale, augmentation in itertools.product(ModelType, DatasetScale, Augmentation):
-        dataset_variant = MNInSecTVariant(augmentation, scale)
+    for model_type, dataset_variant in itertools.product(ModelType, MNInSecTVariant):
         model_name = get_model_name(model_type, dataset_variant)
 
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
