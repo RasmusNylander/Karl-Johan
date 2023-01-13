@@ -67,7 +67,7 @@ def test(model, dataloader: DataLoader, loss_function: _Loss, device: Device) ->
 
 def main(data_path: str, output_root: str, model_pick: ModelType, batch_size: int, num_epochs: int, scale: DatasetScale, enable_logging: bool, run_log_prefix: str, augmentation: Augmentation):
     dataset_variant = MNInSecTVariant(augmentation, scale)
-    model_name = get_model_name(model_pick, dataset_variant.augmentation, dataset_variant.scale)
+    model_name = get_model_name(model_pick, dataset_variant)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     train_loader, validation_loader, test_loader = make_dataloaders(

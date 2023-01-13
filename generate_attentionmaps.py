@@ -55,7 +55,7 @@ def generate_attention_maps(
 ):
     dataset_variant = MNInSecTVariant(dataset_augmentation, scale)
 
-    model_string_id = get_model_name(model_type, dataset_variant.augmentation, dataset_variant.scale)
+    model_string_id = get_model_name(model_type, dataset_variant)
 
     model_path = f"{models_root}/{model_string_id}.pth"
 

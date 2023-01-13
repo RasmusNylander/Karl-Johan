@@ -33,7 +33,7 @@ if __name__=="__main__":
 
     for model_type, scale, augmentation in itertools.product(ModelType, DatasetScale, Augmentation):
         dataset_variant = MNInSecTVariant(augmentation, scale)
-        model_name = get_model_name(model_type, dataset_variant.augmentation, dataset_variant.scale)
+        model_name = get_model_name(model_type, dataset_variant)
 
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         model = get_pretrained(model_type, dataset_variant.augmentation, dataset_variant.scale, MODELS_ROOT, map_location=device).to(device)

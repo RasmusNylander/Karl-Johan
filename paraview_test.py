@@ -7,7 +7,7 @@ import torch
 import torch.nn.functional as F
 from monai.data.image_reader import nib
 
-from create_dataloader import Dataset, DatasetScale, SplitType, Augmentation
+from create_dataloader import Dataset, DatasetScale, MNInSecTVariant, SplitType, Augmentation
 from model_picker import ModelType, get_model_name
 
 MODELS_ROOT = "./models"
@@ -18,19 +18,20 @@ assert BATCH_SIZE == 1
 
 model_type: ModelType = ModelType.SEResNet50
 scale: DatasetScale = DatasetScale.Scale50
-dataset_variant: Augmentation = Augmentation.Original
+dataset_augmentation: Augmentation = Augmentation.Original
 layer = 4
+dataset_variant = MNInSecTVariant(dataset_augmentation, scale)
 
 
 def get_attention_map_and_bug(model_variant, layer: int, image_id: int, dataset: Dataset):
     insect = dataset[image_id]
 
 
-model_string_id = get_model_name(model_type, dataset_variant, scale)
+model_string_id = get_model_name(model_type, dataset_variant)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # device = torch.device("cpu")
-dataset: Dataset = Dataset(MNInSecT_root=DATA_PATH, type=SplitType.Test, seed=69420, as_rgb=False, scale=scale, augmentation=dataset_variant)
+dataset: Dataset = Dataset(MNInSecT_root=DATA_PATH, type=SplitType.Test, seed=69420, as_rgb=False, dataset_variant=dataset_variant)
 
 image, batch_labels = dataset[59]
 image_name = dataset.get_name_of_image(0)
