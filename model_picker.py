@@ -2,7 +2,7 @@ from enum import Enum, auto
 import torch
 from monai.networks.nets import densenet121, SEResNet50, ResNet
 
-from create_dataloader import DatasetScale, MNInSecTVariant
+from create_dataloader import DatasetScale, Augmentation
 
 
 class ModelType(Enum):
@@ -23,23 +23,23 @@ def get_model(type: ModelType) -> torch.nn.Module:
             return SEResNet50(spatial_dims=3, in_channels=1, num_classes=10)
 
 
-def get_model_name(type: ModelType, dataset_variant: MNInSecTVariant, scale: DatasetScale) -> str:
+def get_model_name(type: ModelType, dataset_variant: Augmentation, scale: DatasetScale) -> str:
     assert len(ModelType) == 4 and len(DatasetScale) == 3
 
     scale_as_string = str(scale).zfill(3)
     scale_suffix = f"_{scale_as_string}"
 
-    assert len(MNInSecTVariant) == 3
-    if dataset_variant == MNInSecTVariant.Original:
+    assert len(Augmentation) == 3
+    if dataset_variant == Augmentation.Original:
         variant_suffix = ""
-    elif (dataset_variant == MNInSecTVariant.Masked):
+    elif (dataset_variant == Augmentation.Masked):
         variant_suffix = "_masked"
-    elif (dataset_variant == MNInSecTVariant.Threshold):
+    elif (dataset_variant == Augmentation.Threshold):
         variant_suffix = "_threshold"
 
     return f"{type.name}{scale_suffix}{variant_suffix}"
 
-def get_pretrained(type: ModelType, dataset_variant: MNInSecTVariant, scale: DatasetScale, models_root: str, map_location=None) -> torch.nn.Module:
+def get_pretrained(type: ModelType, dataset_variant: Augmentation, scale: DatasetScale, models_root: str, map_location=None) -> torch.nn.Module:
     name = get_model_name(type, dataset_variant, scale)
     model_path = f"{models_root}/{name}.pth"
     model = get_model(type)

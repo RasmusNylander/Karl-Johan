@@ -53,14 +53,14 @@ class DatasetScale(Enum):
             return "100"
 
 
-class MNInSecTVariant(Enum):
+class Augmentation(Enum):
     Original = auto()
     Masked = auto()
     Threshold = auto()
 
 
 class Dataset(TorchDataset):
-    def __init__(self, MNInSecT_root: str, variant: MNInSecTVariant, scale: DatasetScale, type: DatasetType, seed=42, as_rgb=False, transforms=False):
+    def __init__(self, MNInSecT_root: str, variant: Augmentation, scale: DatasetScale, type: DatasetType, seed=42, as_rgb=False, transforms=False):
 
         dataset_prefix = self.scale_folder_name(scale)
         dataset_suffix = self.variant_folder_suffix(variant)
@@ -87,13 +87,13 @@ class Dataset(TorchDataset):
         return "64x32x32" if scale == DatasetScale.Scale25 else "128x64x64" if scale == DatasetScale.Scale50 else "256x128x128"
 
     @staticmethod
-    def variant_folder_suffix(variant: MNInSecTVariant) -> str:
-        assert len(MNInSecTVariant) == 3, "Unhandled variant"
-        if variant == MNInSecTVariant.Original:
+    def variant_folder_suffix(variant: Augmentation) -> str:
+        assert len(Augmentation) == 3, "Unhandled variant"
+        if variant == Augmentation.Original:
             return ""
-        elif variant == MNInSecTVariant.Masked:
+        elif variant == Augmentation.Masked:
             return "_masked"
-        elif variant == MNInSecTVariant.Threshold:
+        elif variant == Augmentation.Threshold:
             return "_threshold"
 
     @staticmethod
@@ -148,7 +148,7 @@ class Dataset(TorchDataset):
 
 
 def make_dataloaders(
-    variant: MNInSecTVariant,
+    variant: Augmentation,
     scale: DatasetScale,
     batch_size=16,
     seed=42,

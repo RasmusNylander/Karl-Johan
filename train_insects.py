@@ -11,7 +11,7 @@ from torch.optim import Optimizer
 from torchmetrics.functional.classification import multiclass_auroc
 from tqdm import trange
 
-from create_dataloader import DatasetScale, MNInSecTVariant, make_dataloaders
+from create_dataloader import DatasetScale, Augmentation, make_dataloaders
 from accuracy import accuracy
 import wandb
 from logging_wb import init_logging, log_test_result
@@ -65,7 +65,7 @@ def test(model, dataloader: DataLoader, loss_function: _Loss, device: Device) ->
 
         return TestResult(loss.mean().item(), accuracy_score.mean().item(), area_under_curve.mean(dim=1))
 
-def main(data_path: str, output_root: str, model_pick: ModelType, batch_size: int, num_epochs: int, scale: DatasetScale, enable_logging: bool, run_log_prefix: str, dataset_variant: MNInSecTVariant):
+def main(data_path: str, output_root: str, model_pick: ModelType, batch_size: int, num_epochs: int, scale: DatasetScale, enable_logging: bool, run_log_prefix: str, dataset_variant: Augmentation):
     model_name = get_model_name(model_pick, dataset_variant, scale)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -178,11 +178,11 @@ if __name__ == "__main__":
     
     match dataset_variant:
         case "original" | "Original" | "ORIGINAL" | "O" | "o":
-            dataset_variant = MNInSecTVariant.Original
+            dataset_variant = Augmentation.Original
         case "masked" | "Masked" | "MASKED" | "M" | "m":
-            dataset_variant = MNInSecTVariant.Masked
+            dataset_variant = Augmentation.Masked
         case "threshold" | "Threshold" | "THRESHOLD" | "T" | "t":
-            dataset_variant = MNInSecTVariant.Threshold
+            dataset_variant = Augmentation.Threshold
         case _:
             raise ValueError(f"Unknown dataset variant: {dataset_variant}")
 

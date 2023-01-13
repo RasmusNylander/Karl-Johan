@@ -6,7 +6,7 @@ import torch
 import torch.nn.functional as F
 from monai.data.image_reader import nib
 
-from create_dataloader import Dataset, DatasetScale, DatasetType, MNInSecTVariant
+from create_dataloader import Dataset, DatasetScale, DatasetType, Augmentation
 from model_picker import ModelType, get_model_name
 
 MODELS_ROOT = "./models"
@@ -17,7 +17,7 @@ assert BATCH_SIZE == 1
 
 model_type: ModelType = ModelType.ResNet18
 scale: DatasetScale = DatasetScale.Scale100
-dataset_variant: MNInSecTVariant = MNInSecTVariant.Original
+dataset_variant: Augmentation = Augmentation.Original
 layer = 2
 
 model_string_id = get_model_name(model_type, dataset_variant, scale)

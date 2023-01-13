@@ -9,7 +9,7 @@ import torch
 from torch import Tensor
 from tqdm import tqdm
 
-from create_dataloader import Dataset, DatasetScale, MNInSecTVariant, make_dataloaders
+from create_dataloader import Dataset, DatasetScale, Augmentation, make_dataloaders
 from medcam import medcam
 from model_picker import ModelType, get_model, get_pretrained, get_model_name
 
@@ -50,7 +50,7 @@ def generate_attention_maps(
         data_path: str,
         device: torch.device,
         layer: int,
-        dataset_variant: MNInSecTVariant,
+        dataset_variant: Augmentation,
         leave_progress_bar=True
 ):
 
@@ -115,15 +115,15 @@ if __name__ == "__main__":
     models_root: str = args.models_root
     output_path: str = args.output_path
     device = torch.device("cpu" if args.cpu or not torch.cuda.is_available() else "cuda:0")
-    dataset_variants: list[MNInSecTVariant] = []
+    dataset_variants: list[Augmentation] = []
     for dataset_variant in args.dataset_variants:
         match dataset_variant:
             case "original" | "Original" | "ORIGINAL" | "O" | "o":
-                dataset_variants.append(MNInSecTVariant.Original)
+                dataset_variants.append(Augmentation.Original)
             case "masked" | "Masked" | "MASKED" | "M" | "m":
-                dataset_variants.append(MNInSecTVariant.Masked)
+                dataset_variants.append(Augmentation.Masked)
             case "threshold" | "Threshold" | "THRESHOLD" | "T" | "t":
-                dataset_variants.append(MNInSecTVariant.Threshold)
+                dataset_variants.append(Augmentation.Threshold)
             case _:
                 raise ValueError(f"Unknown dataset variant: {dataset_variant}")
 
