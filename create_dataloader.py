@@ -173,7 +173,7 @@ class Dataset(TorchDataset):
     def get_image_classes(self) -> list[str]:
         return self.image_classes
 
-    def get_name_to_label(self) -> dict:
+    def get_name_to_label(self) -> dict[str, int]:
         return self.name_to_label
 
     def num_classes(self) -> int:
