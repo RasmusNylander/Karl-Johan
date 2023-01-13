@@ -24,6 +24,7 @@ class DatasetScale(Enum):
     Scale100 = auto()
 
     def to_float(self) -> float:
+        assert len(DatasetScale) == 3
         match self:
             case DatasetScale.Scale25:
                 return 0.25
@@ -34,18 +35,28 @@ class DatasetScale(Enum):
 
     @staticmethod
     def from_float(scale: float):
+        assert len(DatasetScale) == 3
         if scale == 0.25:
             return DatasetScale.Scale25
         elif scale == 0.5:
             return DatasetScale.Scale50
         elif scale == 1.0:
             return DatasetScale.Scale100
-        else:
-            raise ValueError(f"Scale {scale} is not supported")
+
+    def __str__(self):
+        assert len(DatasetScale) == 3
+        if self == DatasetScale.Scale25:
+            return "25"
+        elif self == DatasetScale.Scale50:
+            return "50"
+        elif self == DatasetScale.Scale100:
+            return "100"
+
 
 class MNInSecTVariant(Enum):
     Original = auto()
     Masked = auto()
+
 
 class Dataset(TorchDataset):
     def __init__(self, MNInSecT_root: str, variant: MNInSecTVariant, scale: DatasetScale, type: DatasetType, seed=42, as_rgb=False, transforms=False):
