@@ -116,17 +116,7 @@ if __name__ == "__main__":
     models_root: str = args.models_root
     output_path: str = args.output_path
     device = torch.device("cpu" if args.cpu or not torch.cuda.is_available() else "cuda:0")
-    dataset_variants: list[Augmentation] = []
-    for dataset_variant in args.dataset_variants:
-        match dataset_variant:
-            case "original" | "Original" | "ORIGINAL" | "O" | "o":
-                dataset_variants.append(Augmentation.Original)
-            case "masked" | "Masked" | "MASKED" | "M" | "m":
-                dataset_variants.append(Augmentation.Masked)
-            case "threshold" | "Threshold" | "THRESHOLD" | "T" | "t":
-                dataset_variants.append(Augmentation.Threshold)
-            case _:
-                raise ValueError(f"Unknown dataset variant: {dataset_variant}")
+    dataset_augmentations = [Augmentation.parse_from_string(string) for string in args.dataset_variants]
 
     for scale in args.scales:
         assert scale in [0.25, 0.5, 1.0], f"scale of {scale} not yet supported. Scale must be either 0.25, 0.5 or 1.0"
@@ -144,5 +134,5 @@ if __name__ == "__main__":
     for layer in layers:
         assert layer in [1, 2, 3, 4], f"Layer {layer} not yet supported. Layer must be either 1, 2, 3 or 4"
 
-    for model_type, dataset_variant, scale, layer in itertools.product(model_types, dataset_variants, scales, layers, desc="Generating attention maps", unit="model"):
-        generate_attention_maps(model_type, scale, models_root, data_path, device, layer, dataset_variant, False)
+    for model_type, dataset_augmentation, scale, layer in itertools.product(model_types, dataset_augmentations, scales, layers, desc="Generating attention maps", unit="model"):
+        generate_attention_maps(model_type, scale, models_root, data_path, device, layer, dataset_augmentation, False)

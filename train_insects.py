@@ -174,17 +174,7 @@ if __name__ == "__main__":
     batch_size = args.batch_size
     num_epochs = args.num_epochs
     scale = DatasetScale.from_float(args.scale)
-    dataset_variant = args.dataset_variant
-    
-    match dataset_variant:
-        case "original" | "Original" | "ORIGINAL" | "O" | "o":
-            dataset_variant = Augmentation.Original
-        case "masked" | "Masked" | "MASKED" | "M" | "m":
-            dataset_variant = Augmentation.Masked
-        case "threshold" | "Threshold" | "THRESHOLD" | "T" | "t":
-            dataset_variant = Augmentation.Threshold
-        case _:
-            raise ValueError(f"Unknown dataset variant: {dataset_variant}")
+    dataset_variant = Augmentation.parse_from_string(args.dataset_variant)
 
     model_type = ModelType[model_name]
 

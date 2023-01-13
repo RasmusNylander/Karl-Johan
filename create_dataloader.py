@@ -60,6 +60,19 @@ class Augmentation(Enum):
     Masked = auto()
     Threshold = auto()
 
+    @staticmethod
+    def parse_from_string(string: str):
+        assert len(Augmentation) == 3
+        match string.lower():
+            case "none" | "original" | "orig" | "o":
+                return Augmentation.Original
+            case "masked" | "mask" | "m":
+                return Augmentation.Masked
+            case "threshold" | "thresh" | "t":
+                return Augmentation.Threshold
+            case _:
+                raise ValueError(f"Unknown augmentation: {string}")
+
 class MNInSecTVariantMeta(type):
     def __iter__(cls):
         iterator = itertools.product(Augmentation, DatasetScale)
