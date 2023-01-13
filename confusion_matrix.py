@@ -49,7 +49,8 @@ if __name__=="__main__":
                 data_path=DATA_PATH,
                 pin_memory=False,
                 as_rgb=False,
-                scale=scale
+                scale=scale,
+                masked = True
             )
     
             confmat = create_confusion(model,test_loader)
