@@ -6,7 +6,7 @@ import argparse
 import torch
 from torch import Tensor, device as Device
 
-from create_dataloader import make_dataloaders
+from create_dataloader import DatasetScale, make_dataloaders
 from model_picker import ModelType, get_model
 from torchmetrics import ConfusionMatrix
 import numpy as np
@@ -33,11 +33,10 @@ def create_confusion(model,data_loader):
 if __name__=="__main__":
     MODELS_ROOT = "./models"
     DATA_PATH = "./datasets/MNInSecT"
-    
-    scales = [0.25, 0.5, 1.0]
+
     for model_type in ModelType:
-        for scale in scales:
-            model_path = f"{MODELS_ROOT}/{model_type.name}_{str(int(scale*100)).zfill(3)}.pth"
+        for scale in DatasetScale:
+            model_path = f"{MODELS_ROOT}/{model_type.name}_{str(int(scale.to_float()*100)).zfill(3)}.pth"
 
             device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
             model = get_model(model_type)
@@ -55,4 +54,4 @@ if __name__=="__main__":
     
             confmat = create_confusion(model,test_loader)
 
-            np.save(f"confusion_matrix/{model_type.name}_{str(int(scale*100)).zfill(3)}",confmat.numpy())
+            np.save(f"confusion_matrix/{model_type.name}_{str(int(scale.to_float()*100)).zfill(3)}",confmat.numpy())

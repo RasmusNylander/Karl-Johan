@@ -11,7 +11,7 @@ from torch.optim import Optimizer
 from torchmetrics.functional.classification import multiclass_auroc
 from tqdm import trange
 
-from create_dataloader import make_dataloaders
+from create_dataloader import DatasetScale, MNInSecTVariant, make_dataloaders
 from accuracy import accuracy
 import wandb
 from logging_wb import init_logging, log_test_result
@@ -65,7 +65,7 @@ def test(model, dataloader: DataLoader, loss_function: _Loss, device: Device) ->
 
         return TestResult(loss.mean().item(), accuracy_score.mean().item(), area_under_curve.mean(dim=1))
 
-def main(data_path: str, output_path: str, model_pick: ModelType, batch_size: int, num_epochs: int, scale: float, enable_logging: bool, run_log_prefix: str, masked: bool):
+def main(data_path: str, output_path: str, model_pick: ModelType, batch_size: int, num_epochs: int, scale: DatasetScale, enable_logging: bool, run_log_prefix: str, dataset_variant: MNInSecTVariant):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     train_loader, validation_loader, test_loader = make_dataloaders(
@@ -76,7 +76,7 @@ def main(data_path: str, output_path: str, model_pick: ModelType, batch_size: in
         pin_memory=False,
         as_rgb=False,
         scale=scale,
-        masked=masked
+        variant=dataset_variant
     )
         
     num_classes = len(train_loader.dataset.get_image_classes())
@@ -174,10 +174,9 @@ if __name__ == "__main__":
     model_name = args.model
     batch_size = args.batch_size
     num_epochs = args.num_epochs
-    scale = args.scale
+    scale = DatasetScale.from_float(args.scale)
     masked = args.masked
-
-    assert scale in [0.25, 0.5, 1.0], f"scale of {scale} not yet supported. Scale must be either 0.25, 0.5 or 1.0"
+    dataset_variant = MNInSecTVariant.Masked if masked else MNInSecTVariant.Original
 
     model_type = ModelType[model_name]
 
@@ -190,4 +189,4 @@ if __name__ == "__main__":
     else:
         wandb_prefix = ""
 
-    main(data_path, output_path, model_type, batch_size, num_epochs, scale, enable_logging, wandb_prefix, masked)
+    main(data_path, output_path, model_type, batch_size, num_epochs, scale, enable_logging, wandb_prefix, dataset_variant)

@@ -9,7 +9,7 @@ import torch
 from torch import Tensor
 from tqdm import tqdm
 
-from create_dataloader import Dataset, make_dataloaders
+from create_dataloader import Dataset, DatasetScale, MNInSecTVariant, make_dataloaders
 from medcam import medcam
 from model_picker import ModelType, get_model
 
@@ -45,22 +45,21 @@ def layer_to_layer_name(model: ModelType, layer: int) -> str:
 
 def generate_attention_maps(
         model_type: ModelType,
-        scale: float,
+        scale: DatasetScale,
         models_root: str,
         data_path: str,
         device: torch.device,
         layer: int,
-        dataset_variant: str,
+        dataset_variant: MNInSecTVariant,
         leave_progress_bar=True
 ):
-    model_string_id = f"{model_type.name}_{str(int(scale * 100)).zfill(3)}"
+    masked = dataset_variant == MNInSecTVariant.Masked
+    model_string_id = f"{model_type.name}_{str(int(scale.to_float() * 100)).zfill(3)}{'_masked' if masked else ''}"
 
-    masked = dataset_variant == "masked"
-
-    model_path = f"{models_root}/{model_string_id}{'_masked' if masked else ''}.pth"
+    model_path = f"{models_root}/{model_string_id}.pth"
 
     _, _, test_loader = make_dataloaders(num_workers=0, persistent_workers=False, data_path=data_path,
-                                         batch_size=BATCH_SIZE, scale=scale, pin_memory=False, masked=masked)
+                                         batch_size=BATCH_SIZE, scale=scale, pin_memory=False, variant=dataset_variant)
 
     dataset: Dataset = test_loader.dataset
 
@@ -118,13 +117,17 @@ if __name__ == "__main__":
     models_root: str = args.models_root
     output_path: str = args.output_path
     device = torch.device("cpu" if args.cpu or not torch.cuda.is_available() else "cuda:0")
-    dataset_variant = args.dataset_variant
-    if dataset_variant not in ["original", "masked"]:
-        raise ValueError(f"Unknown dataset variant {dataset_variant}. Must be 'original' or 'masked'")
+    match args.dataset_variant:
+        case "original" | "Original" | "ORIGINAL" | "O" | "o":
+            dataset_variant = MNInSecTVariant.Original
+        case "masked" | "Masked" | "MASKED" | "M" | "m":
+            dataset_variant = MNInSecTVariant.Masked
+        case _:
+            raise ValueError(f"Unknown dataset variant: {args.dataset_variant}")
 
-    scales: float = args.scales
-    for scale in scales:
+    for scale in args.scales:
         assert scale in [0.25, 0.5, 1.0], f"scale of {scale} not yet supported. Scale must be either 0.25, 0.5 or 1.0"
+    scales = [DatasetScale.from_float(scale) for scale in args.scales]
 
     model_names = args.models
     model_types: list[ModelType] = []

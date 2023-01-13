@@ -19,3 +19,5 @@ def get_model(type: ModelType) -> torch.nn.Module:
             return densenet121(spatial_dims=3, in_channels=1, out_channels=10)
         case ModelType.SEResNet50:
             return SEResNet50(spatial_dims=3, in_channels=1, num_classes=10)
+
+# def get_pretrained(type: ModelType, )

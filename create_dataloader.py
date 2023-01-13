@@ -18,31 +18,47 @@ class DatasetType(Enum):
     Test = auto()
 
 
+class DatasetScale(Enum):
+    Scale25 = auto()
+    Scale50 = auto()
+    Scale100 = auto()
+
+    def to_float(self) -> float:
+        match self:
+            case DatasetScale.Scale25:
+                return 0.25
+            case DatasetScale.Scale50:
+                return 0.5
+            case DatasetScale.Scale100:
+                return 1.0
+
+    @staticmethod
+    def from_float(scale: float):
+        if scale == 0.25:
+            return DatasetScale.Scale25
+        elif scale == 0.5:
+            return DatasetScale.Scale50
+        elif scale == 1.0:
+            return DatasetScale.Scale100
+        else:
+            raise ValueError(f"Scale {scale} is not supported")
+
+class MNInSecTVariant(Enum):
+    Original = auto()
+    Masked = auto()
+
 class Dataset(TorchDataset):
-    def __init__(self, data_path, type: DatasetType, seed=42, as_rgb=False, transforms=False, scale: float = 1.0, masked: bool = False):
-        assert scale == 1.0 or scale == 0.5 or scale == 0.25, "Scale must be 1.0, 0.5 or 0.25"
-        if scale == 1.0:
-            dataset_prefix = "256x128x128"
-        if scale == 0.5:
-            dataset_prefix = "128x64x64"
-        elif scale == 0.25:
-            dataset_prefix = "64x32x32"
+    def __init__(self, MNInSecT_root: str, variant: MNInSecTVariant, scale: DatasetScale, type: DatasetType, seed=42, as_rgb=False, transforms=False):
 
-        dataset_suffix = "_masked" if masked else ""
-        dataset_path = f"{data_path}/{dataset_prefix}{dataset_suffix}"
-        assert len(DatasetType) == 3
-        match type:
-            case DatasetType.Train:
-                self.image_paths = pd.read_csv(data_path + "/train.csv", names=["files"], header=0).files.tolist()
-            case DatasetType.Test:
-                self.image_paths = pd.read_csv(data_path + "/test.csv", names=["files"], header=0).files.tolist()
-            case DatasetType.Validation:
-                self.image_paths = pd.read_csv(data_path + "/validation.csv", names=["files"], header=0).files.tolist()
+        dataset_prefix = self.scale_folder_name(scale)
+        dataset_suffix = self.variant_folder_suffix(variant)
+        dataset_path = os.path.join(MNInSecT_root, f"{dataset_prefix}{dataset_suffix}")
+        if not os.path.exists(dataset_path):
+            raise FileNotFoundError(f"Dataset not found at {dataset_path}")
 
+        self.image_paths = self.dataset_images(MNInSecT_root, type)
 
-
-
-        self.image_paths = [f"{dataset_path}/{path}" for path in self.image_paths]
+        self.image_paths = [os.path.join(dataset_path, path) for path in self.image_paths]
         self.image_classes = [
             os.path.split(d)[1] for d in glob.glob(dataset_path + "/*") if os.path.isdir(d)
         ]
@@ -52,6 +68,22 @@ class Dataset(TorchDataset):
         self.as_rgb = as_rgb
         self.transforms = transforms
         self.rot = RandomRotation(180)
+
+    @staticmethod
+    def scale_folder_name(scale: DatasetScale) -> str:
+        assert len(DatasetScale) == 3, "Unhandled scale"
+        return "64x32x32" if scale == DatasetScale.Scale25 else "128x64x64" if scale == DatasetScale.Scale50 else "256x128x128"
+
+    @staticmethod
+    def variant_folder_suffix(variant: MNInSecTVariant) -> str:
+        assert len(MNInSecTVariant) == 2, "Unhandled variant"
+        return "" if variant == MNInSecTVariant.Original else "_masked"
+
+    @staticmethod
+    def dataset_images(MNInSecT_root: str, type: DatasetType) -> list[str]:
+        assert len(DatasetType) == 3
+        file_name = "train" if type == DatasetType.Train else "test" if type == DatasetType.Test else "validation"
+        return pd.read_csv(f"{MNInSecT_root}/{file_name}.csv", names=["files"], header=0).files.tolist()
 
     def __len__(self) -> int:
         return len(self.image_paths)  # len(self.data)
@@ -99,6 +131,8 @@ class Dataset(TorchDataset):
 
 
 def make_dataloaders(
+    variant: MNInSecTVariant,
+    scale: DatasetScale,
     batch_size=16,
     seed=42,
     data_path="./datasets/MNInSecT",
@@ -107,16 +141,14 @@ def make_dataloaders(
     persistent_workers=True,
     as_rgb=False,
     transforms=False,
-    scale: float = 1.0,
-    masked: bool = False,
 ) -> tuple[DataLoader, DataLoader, DataLoader]:
     """
     Creates a train and test dataloader with a variable batch size and image shape.
     And using a weighted sampler for the training dataloader to have balanced mini-batches when training.
     """
-    train_set = Dataset(data_path=data_path, type=DatasetType.Train, seed=seed, as_rgb=as_rgb, transforms=transforms, scale=scale, masked=masked)
-    validation_set = Dataset(data_path=data_path, type=DatasetType.Validation, seed=seed, as_rgb=as_rgb, scale=scale, masked=masked)
-    test_set = Dataset(data_path=data_path, type=DatasetType.Test, seed=seed, as_rgb=as_rgb, scale=scale, masked=masked)
+    train_set = Dataset(MNInSecT_root=data_path, type=DatasetType.Train, seed=seed, as_rgb=as_rgb, transforms=transforms, scale=scale, variant=variant)
+    validation_set = Dataset(MNInSecT_root=data_path, type=DatasetType.Validation, seed=seed, as_rgb=as_rgb, scale=scale, variant=variant)
+    test_set = Dataset(MNInSecT_root=data_path, type=DatasetType.Test, seed=seed, as_rgb=as_rgb, scale=scale, variant=variant)
 
     train_loader = DataLoader(
         train_set,

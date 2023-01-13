@@ -1,9 +1,10 @@
 import wandb
+from create_dataloader import DatasetScale
 
 from model_picker import ModelType
 
 
-def init_logging(run_name: str, learning_rate: float, num_epochs: int, batch_size: int, modelType: ModelType, scale: float, model):
+def init_logging(run_name: str, learning_rate: float, num_epochs: int, batch_size: int, modelType: ModelType, scale: DatasetScale, model):
     wandb.init(
         project="3d-insect-classification",
         name=run_name,
@@ -13,7 +14,7 @@ def init_logging(run_name: str, learning_rate: float, num_epochs: int, batch_siz
             "number of epochs": num_epochs,
             "batch size": batch_size,
             "model": modelType.name,
-            "scale": scale,
+            "scale": scale.to_float(),
             "optimiser": "Adam"
         })
 
