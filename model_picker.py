@@ -24,7 +24,7 @@ def get_model(type: ModelType) -> torch.nn.Module:
 
 
 def get_model_name(type: ModelType, dataset_variant: MNInSecTVariant, scale: DatasetScale) -> str:
-    assert len(ModelType) == 4 and len(DatasetScale) == 3 and len(MNInSecTVariant) == 2
+    assert len(ModelType) == 4 and len(DatasetScale) == 3 and len(MNInSecTVariant) == 3
 
     scale_as_string = str(int(scale.to_float() * 100)).zfill(3)
     scale_suffix = f"_{scale_as_string}"
