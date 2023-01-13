@@ -108,20 +108,22 @@ if __name__ == "__main__":
     parser.add_argument("--scales", type=float, nargs="+", help='Scale of the images. Must be 0.25, 0.5 or 1.0')
     parser.add_argument("--layers", type=int, nargs="+", help='Layer to use for attention maps.')
     parser.add_argument("--cpu", action="store_true", help="Force using CPU")
-    parser.add_argument("--dataset_variant", type=str, default="original", help="Variant of MNInSecT to use. Must be 'original' or 'masked'")
+    parser.add_argument("--dataset_variants", type=str, nargs="+", default="original", help="Variant of MNInSecT to use. Must be 'original' or 'masked'")
 
     args = parser.parse_args()
     data_path: str = args.data_path
     models_root: str = args.models_root
     output_path: str = args.output_path
     device = torch.device("cpu" if args.cpu or not torch.cuda.is_available() else "cuda:0")
-    match args.dataset_variant:
-        case "original" | "Original" | "ORIGINAL" | "O" | "o":
-            dataset_variant = MNInSecTVariant.Original
-        case "masked" | "Masked" | "MASKED" | "M" | "m":
-            dataset_variant = MNInSecTVariant.Masked
-        case _:
-            raise ValueError(f"Unknown dataset variant: {args.dataset_variant}")
+    dataset_variants: list[MNInSecTVariant] = []
+    for dataset_variant in args.dataset_variants:
+        match dataset_variant:
+            case "original" | "Original" | "ORIGINAL" | "O" | "o":
+                dataset_variants.append(MNInSecTVariant.Original)
+            case "masked" | "Masked" | "MASKED" | "M" | "m":
+                dataset_variants.append(MNInSecTVariant.Masked)
+            case _:
+                raise ValueError(f"Unknown dataset variant: {dataset_variant}")
 
     for scale in args.scales:
         assert scale in [0.25, 0.5, 1.0], f"scale of {scale} not yet supported. Scale must be either 0.25, 0.5 or 1.0"
@@ -139,5 +141,5 @@ if __name__ == "__main__":
     for layer in layers:
         assert layer in [1, 2, 3, 4], f"Layer {layer} not yet supported. Layer must be either 1, 2, 3 or 4"
 
-    for model_type, scale, layer in itertools.product(model_types, scales, layers, desc="Generating attention maps", unit="model"):
+    for model_type, dataset_variant, scale, layer in itertools.product(model_types, dataset_variants, scales, layers, desc="Generating attention maps", unit="model"):
         generate_attention_maps(model_type, scale, models_root, data_path, device, layer, dataset_variant, False)
