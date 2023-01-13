@@ -1,5 +1,6 @@
 import argparse
 import copy
+from itertools import product
 
 from tifffile import tifffile
 from tqdm.contrib import itertools
@@ -45,19 +46,14 @@ def layer_to_layer_name(model: ModelType, layer: int) -> str:
 
 def generate_attention_maps(
         model_type: ModelType,
-        scale: DatasetScale,
+        dataset_variant: MNInSecTVariant,
         models_root: str,
         data_path: str,
         device: torch.device,
         layer: int,
-        dataset_augmentation: Augmentation,
         leave_progress_bar=True
 ):
-    dataset_variant = MNInSecTVariant(dataset_augmentation, scale)
-
     model_string_id = get_model_name(model_type, dataset_variant)
-
-    model_path = f"{models_root}/{model_string_id}.pth"
 
     _, _, test_loader = make_dataloaders(num_workers=0, persistent_workers=False, data_path=data_path,
                                          batch_size=BATCH_SIZE, pin_memory=False, variant=dataset_variant)
@@ -116,8 +112,12 @@ if __name__ == "__main__":
     models_root: str = args.models_root
     output_path: str = args.output_path
     device = torch.device("cpu" if args.cpu or not torch.cuda.is_available() else "cuda:0")
+
     dataset_augmentations = [Augmentation.parse_from_string(string) for string in args.dataset_variants]
     scales = [DatasetScale.from_float(scale) for scale in args.scales]
+    dataset_variants = [
+        MNInSecTVariant(augmentation, scale) for augmentation, scale in product(dataset_augmentations, scales)
+    ]
 
     model_types = [ModelType.parse_from_string(model) for model in args.models]
 
@@ -125,5 +125,5 @@ if __name__ == "__main__":
     for layer in layers:
         assert layer in [1, 2, 3, 4], f"Layer {layer} not yet supported. Layer must be either 1, 2, 3 or 4"
 
-    for model_type, dataset_augmentation, scale, layer in itertools.product(model_types, dataset_augmentations, scales, layers, desc="Generating attention maps", unit="model"):
-        generate_attention_maps(model_type, scale, models_root, data_path, device, layer, dataset_augmentation, False)
+    for model_type, dataset_variant, layer in itertools.product(model_types, dataset_variants, layers, desc="Generating attention maps", unit="model"):
+        generate_attention_maps(model_type, dataset_variant, models_root, data_path, device, layer, False)
