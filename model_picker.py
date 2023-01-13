@@ -2,7 +2,7 @@ from enum import Enum, auto
 import torch
 from monai.networks.nets import densenet121, SEResNet50, ResNet
 
-from create_dataloader import Augmentation, DatasetScale, MNInSecTVariant
+from create_dataloader import MNInSecTVariant
 
 
 class ModelType(Enum):
@@ -25,7 +25,7 @@ def get_model(type: ModelType) -> torch.nn.Module:
 
 def get_model_name(type: ModelType, variant: MNInSecTVariant) -> str:
     scale_suffix = f"_{str(variant.scale).zfill(3)}"
-    return f"{type.name}{scale_suffix}{variant.augmentation_suffix()}"
+    return f"{type.name}{scale_suffix}{variant.augmentation_suffix}"
 
 
 def get_pretrained(type: ModelType, variant: MNInSecTVariant, models_root: str, map_location=None) -> torch.nn.Module:

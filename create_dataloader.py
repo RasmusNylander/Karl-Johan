@@ -73,6 +73,7 @@ class MNInSecTVariant:
         elif self.scale == DatasetScale.Scale100:
             return "256x128x128"
 
+    @property
     def augmentation_suffix(self) -> str:
         assert len(Augmentation) == 3, "Unhandled augmentation"
         if self.augmentation == Augmentation.Original:
@@ -84,7 +85,7 @@ class MNInSecTVariant:
 
     @property
     def name(self) -> str:
-        return f"{self.base_name()}{self.augmentation_suffix()}"
+        return f"{self.base_name()}{self.augmentation_suffix}"
 
     def __str__(self):
         return self.name
