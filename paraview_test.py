@@ -1,4 +1,5 @@
 import glob
+from dataclasses import dataclass
 
 import numpy as np
 import tifffile
@@ -15,18 +16,23 @@ ATTENTION_MAPS_ROOT = "D:/attention_maps"
 BATCH_SIZE = 1
 assert BATCH_SIZE == 1
 
-model_type: ModelType = ModelType.ResNet18
-scale: DatasetScale = DatasetScale.Scale100
+model_type: ModelType = ModelType.SEResNet50
+scale: DatasetScale = DatasetScale.Scale50
 dataset_variant: Augmentation = Augmentation.Original
-layer = 2
+layer = 4
+
+
+def get_attention_map_and_bug(model_variant, layer: int, image_id: int, dataset: Dataset):
+    insect = dataset[image_id]
+
 
 model_string_id = get_model_name(model_type, dataset_variant, scale)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # device = torch.device("cpu")
-dataset: Dataset = Dataset(MNInSecT_root=DATA_PATH, type=DatasetType.Test, seed=69420, as_rgb=False, scale=scale, variant=dataset_variant)
+dataset: Dataset = Dataset(MNInSecT_root=DATA_PATH, type=DatasetType.Test, seed=69420, as_rgb=False, scale=scale, augmentation=dataset_variant)
 
-image, batch_labels = dataset[0]
+image, batch_labels = dataset[59]
 image_name = dataset.get_name_of_image(0)
 
 attentionmap_paths = glob.glob(f"{ATTENTION_MAPS_ROOT}/{model_string_id}/layer{layer}/{image_name}/*")

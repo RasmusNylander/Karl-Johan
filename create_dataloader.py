@@ -1,4 +1,5 @@
 import os
+from dataclasses import dataclass
 from enum import Enum, auto
 
 import glob
@@ -58,13 +59,39 @@ class Augmentation(Enum):
     Masked = auto()
     Threshold = auto()
 
+@dataclass
+class MNInSecTVariant:
+    augmentation: Augmentation
+    scale: DatasetScale
+
+    def base_name(self) -> str:
+        assert len(DatasetScale) == 3, "Unhandled scale"
+        if self.scale == DatasetScale.Scale25:
+            return "64x32x32"
+        elif self.scale == DatasetScale.Scale50:
+            return "128x64x64"
+        elif self.scale == DatasetScale.Scale100:
+            return "256x128x128"
+
+    def augmentation_suffix(self) -> str:
+        assert len(Augmentation) == 3, "Unhandled augmentation"
+        if self.augmentation == Augmentation.Original:
+            return ""
+        elif self.augmentation == Augmentation.Masked:
+            return "_masked"
+        elif self.augmentation == Augmentation.Threshold:
+            return "_threshold"
+
+    def name(self) -> str:
+        return f"{self.base_name()}{self.augmentation_suffix()}"
+
+    def __str__(self):
+        return self.name()
 
 class Dataset(TorchDataset):
-    def __init__(self, MNInSecT_root: str, variant: Augmentation, scale: DatasetScale, type: DatasetType, seed=42, as_rgb=False, transforms=False):
+    def __init__(self, MNInSecT_root: str, variant: MNInSecTVariant, type: DatasetType, seed=42, as_rgb=False, transforms=False):
 
-        dataset_prefix = self.scale_folder_name(scale)
-        dataset_suffix = self.variant_folder_suffix(variant)
-        dataset_path = os.path.join(MNInSecT_root, f"{dataset_prefix}{dataset_suffix}")
+        dataset_path = os.path.join(MNInSecT_root, variant.name())
         if not os.path.exists(dataset_path):
             raise FileNotFoundError(f"Dataset not found at {dataset_path}")
 
@@ -80,21 +107,6 @@ class Dataset(TorchDataset):
         self.as_rgb = as_rgb
         self.transforms = transforms
         self.rot = RandomRotation(180)
-
-    @staticmethod
-    def scale_folder_name(scale: DatasetScale) -> str:
-        assert len(DatasetScale) == 3, "Unhandled scale"
-        return "64x32x32" if scale == DatasetScale.Scale25 else "128x64x64" if scale == DatasetScale.Scale50 else "256x128x128"
-
-    @staticmethod
-    def variant_folder_suffix(variant: Augmentation) -> str:
-        assert len(Augmentation) == 3, "Unhandled variant"
-        if variant == Augmentation.Original:
-            return ""
-        elif variant == Augmentation.Masked:
-            return "_masked"
-        elif variant == Augmentation.Threshold:
-            return "_threshold"
 
     @staticmethod
     def dataset_images(MNInSecT_root: str, type: DatasetType) -> list[str]:
@@ -148,8 +160,7 @@ class Dataset(TorchDataset):
 
 
 def make_dataloaders(
-    variant: Augmentation,
-    scale: DatasetScale,
+    variant: MNInSecTVariant,
     batch_size=16,
     seed=42,
     data_path="./datasets/MNInSecT",
@@ -163,9 +174,9 @@ def make_dataloaders(
     Creates a train and test dataloader with a variable batch size and image shape.
     And using a weighted sampler for the training dataloader to have balanced mini-batches when training.
     """
-    train_set = Dataset(MNInSecT_root=data_path, type=DatasetType.Train, seed=seed, as_rgb=as_rgb, transforms=transforms, scale=scale, variant=variant)
-    validation_set = Dataset(MNInSecT_root=data_path, type=DatasetType.Validation, seed=seed, as_rgb=as_rgb, scale=scale, variant=variant)
-    test_set = Dataset(MNInSecT_root=data_path, type=DatasetType.Test, seed=seed, as_rgb=as_rgb, scale=scale, variant=variant)
+    train_set = Dataset(MNInSecT_root=data_path, type=DatasetType.Train, seed=seed, as_rgb=as_rgb, transforms=transforms, variant=variant)
+    validation_set = Dataset(MNInSecT_root=data_path, type=DatasetType.Validation, seed=seed, as_rgb=as_rgb, variant=variant)
+    test_set = Dataset(MNInSecT_root=data_path, type=DatasetType.Test, seed=seed, as_rgb=as_rgb, variant=variant)
 
     train_loader = DataLoader(
         train_set,

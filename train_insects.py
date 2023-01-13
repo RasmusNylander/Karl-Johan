@@ -11,7 +11,7 @@ from torch.optim import Optimizer
 from torchmetrics.functional.classification import multiclass_auroc
 from tqdm import trange
 
-from create_dataloader import DatasetScale, Augmentation, make_dataloaders
+from create_dataloader import DatasetScale, Augmentation, MNInSecTVariant, make_dataloaders
 from accuracy import accuracy
 import wandb
 from logging_wb import init_logging, log_test_result
@@ -65,8 +65,9 @@ def test(model, dataloader: DataLoader, loss_function: _Loss, device: Device) ->
 
         return TestResult(loss.mean().item(), accuracy_score.mean().item(), area_under_curve.mean(dim=1))
 
-def main(data_path: str, output_root: str, model_pick: ModelType, batch_size: int, num_epochs: int, scale: DatasetScale, enable_logging: bool, run_log_prefix: str, dataset_variant: Augmentation):
-    model_name = get_model_name(model_pick, dataset_variant, scale)
+def main(data_path: str, output_root: str, model_pick: ModelType, batch_size: int, num_epochs: int, scale: DatasetScale, enable_logging: bool, run_log_prefix: str, augmentation: Augmentation):
+    dataset_variant = MNInSecTVariant(augmentation, scale)
+    model_name = get_model_name(model_pick, dataset_variant.augmentation, dataset_variant.scale)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     train_loader, validation_loader, test_loader = make_dataloaders(
@@ -76,7 +77,6 @@ def main(data_path: str, output_root: str, model_pick: ModelType, batch_size: in
         transforms=True,
         pin_memory=False,
         as_rgb=False,
-        scale=scale,
         variant=dataset_variant
     )
         
@@ -133,7 +133,7 @@ def main(data_path: str, output_root: str, model_pick: ModelType, batch_size: in
 
                 progress_bar.set_description(f"Epoch {epoch} – Best AUC: {validation_metrics.auc.mean().item():.5} – Best ACC: {validation_metrics.acc:.5}")
 
-    model = get_pretrained(model_pick, dataset_variant, scale, output_path).to(device)
+    model = get_pretrained(model_pick, augmentation, scale, output_path).to(device)
 
     train_metrics = test(model, train_loader,  loss_function, device)
     validation_metrics = test(model, validation_loader, loss_function, device)

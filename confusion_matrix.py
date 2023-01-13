@@ -2,7 +2,7 @@ import torch
 from tqdm.contrib import itertools
 
 
-from create_dataloader import DatasetScale, Augmentation, make_dataloaders
+from create_dataloader import DatasetScale, Augmentation, MNInSecTVariant, make_dataloaders
 from model_picker import ModelType, get_model, get_model_name, get_pretrained
 from torchmetrics import ConfusionMatrix
 import numpy as np
@@ -31,11 +31,12 @@ if __name__=="__main__":
     MODELS_ROOT = "./models"
     DATA_PATH = "./datasets/MNInSecT"
 
-    for model_type, scale, variant in itertools.product(ModelType, DatasetScale, Augmentation):
-        model_name = get_model_name(model_type, variant, scale)
+    for model_type, scale, augmentation in itertools.product(ModelType, DatasetScale, Augmentation):
+        dataset_variant = MNInSecTVariant(augmentation, scale)
+        model_name = get_model_name(model_type, dataset_variant.augmentation, dataset_variant.scale)
 
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        model = get_pretrained(model_type, variant, scale, MODELS_ROOT, map_location=device).to(device)
+        model = get_pretrained(model_type, dataset_variant.augmentation, dataset_variant.scale, MODELS_ROOT, map_location=device).to(device)
 
         _,_,test_loader = make_dataloaders(
             batch_size=10,
@@ -43,8 +44,7 @@ if __name__=="__main__":
             data_path=DATA_PATH,
             pin_memory=False,
             as_rgb=False,
-            scale=scale,
-            variant=variant,
+            variant=dataset_variant
         )
 
         confmat = create_confusion(model, test_loader)

@@ -9,7 +9,7 @@ import torch
 from torch import Tensor
 from tqdm import tqdm
 
-from create_dataloader import Dataset, DatasetScale, Augmentation, make_dataloaders
+from create_dataloader import Dataset, DatasetScale, Augmentation, MNInSecTVariant, make_dataloaders
 from medcam import medcam
 from model_picker import ModelType, get_model, get_pretrained, get_model_name
 
@@ -50,20 +50,21 @@ def generate_attention_maps(
         data_path: str,
         device: torch.device,
         layer: int,
-        dataset_variant: Augmentation,
+        dataset_augmentation: Augmentation,
         leave_progress_bar=True
 ):
+    dataset_variant = MNInSecTVariant(dataset_augmentation, scale)
 
-    model_string_id = get_model_name(model_type, dataset_variant, scale)
+    model_string_id = get_model_name(model_type, dataset_variant.augmentation, dataset_variant.scale)
 
     model_path = f"{models_root}/{model_string_id}.pth"
 
     _, _, test_loader = make_dataloaders(num_workers=0, persistent_workers=False, data_path=data_path,
-                                         batch_size=BATCH_SIZE, scale=scale, pin_memory=False, variant=dataset_variant)
+                                         batch_size=BATCH_SIZE, pin_memory=False, variant=dataset_variant)
 
     dataset: Dataset = test_loader.dataset
 
-    model = get_pretrained(model_type, dataset_variant, scale, models_root).to(device)
+    model = get_pretrained(model_type, dataset_variant.augmentation, dataset_variant.scale, models_root).to(device)
     model.eval()
 
     layer_name = layer_to_layer_name(model_type, layer)

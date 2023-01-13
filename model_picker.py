@@ -23,24 +23,24 @@ def get_model(type: ModelType) -> torch.nn.Module:
             return SEResNet50(spatial_dims=3, in_channels=1, num_classes=10)
 
 
-def get_model_name(type: ModelType, dataset_variant: Augmentation, scale: DatasetScale) -> str:
+def get_model_name(type: ModelType, augmentation: Augmentation, scale: DatasetScale) -> str:
     assert len(ModelType) == 4 and len(DatasetScale) == 3
 
     scale_as_string = str(scale).zfill(3)
     scale_suffix = f"_{scale_as_string}"
 
     assert len(Augmentation) == 3
-    if dataset_variant == Augmentation.Original:
+    if augmentation == Augmentation.Original:
         variant_suffix = ""
-    elif (dataset_variant == Augmentation.Masked):
+    elif (augmentation == Augmentation.Masked):
         variant_suffix = "_masked"
-    elif (dataset_variant == Augmentation.Threshold):
+    elif (augmentation == Augmentation.Threshold):
         variant_suffix = "_threshold"
 
     return f"{type.name}{scale_suffix}{variant_suffix}"
 
-def get_pretrained(type: ModelType, dataset_variant: Augmentation, scale: DatasetScale, models_root: str, map_location=None) -> torch.nn.Module:
-    name = get_model_name(type, dataset_variant, scale)
+def get_pretrained(type: ModelType, augmentation: Augmentation, scale: DatasetScale, models_root: str, map_location=None) -> torch.nn.Module:
+    name = get_model_name(type, augmentation, scale)
     model_path = f"{models_root}/{name}.pth"
     model = get_model(type)
     model.load_state_dict(torch.load(model_path, map_location=map_location)['net'], strict=True)
