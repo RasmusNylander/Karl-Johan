@@ -82,16 +82,18 @@ class MNInSecTVariant:
         elif self.augmentation == Augmentation.Threshold:
             return "_threshold"
 
+    @property
     def name(self) -> str:
         return f"{self.base_name()}{self.augmentation_suffix()}"
 
     def __str__(self):
-        return self.name()
+        return self.name
+
 
 class Dataset(TorchDataset):
     def __init__(self, MNInSecT_root: str, variant: MNInSecTVariant, type: SplitType, seed=42, as_rgb=False, transforms=False):
 
-        dataset_path = os.path.join(MNInSecT_root, variant.name())
+        dataset_path = os.path.join(MNInSecT_root, variant.name)
         if not os.path.exists(dataset_path):
             raise FileNotFoundError(f"Dataset not found at {dataset_path}")
 
