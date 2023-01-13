@@ -15,7 +15,7 @@ from create_dataloader import DatasetScale, MNInSecTVariant, make_dataloaders
 from accuracy import accuracy
 import wandb
 from logging_wb import init_logging, log_test_result
-from model_picker import ModelType, get_model
+from model_picker import ModelType, get_model, get_model_name, get_pretrained
 
 
 def train_one_epoch(model, dataloader: DataLoader, loss_function: _Loss, optimizer: Optimizer, device: Device) -> float:
@@ -65,7 +65,8 @@ def test(model, dataloader: DataLoader, loss_function: _Loss, device: Device) ->
 
         return TestResult(loss.mean().item(), accuracy_score.mean().item(), area_under_curve.mean(dim=1))
 
-def main(data_path: str, output_path: str, model_pick: ModelType, batch_size: int, num_epochs: int, scale: DatasetScale, enable_logging: bool, run_log_prefix: str, dataset_variant: MNInSecTVariant):
+def main(data_path: str, output_root: str, model_pick: ModelType, batch_size: int, num_epochs: int, scale: DatasetScale, enable_logging: bool, run_log_prefix: str, dataset_variant: MNInSecTVariant):
+    model_name = get_model_name(model_pick, dataset_variant, scale)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     train_loader, validation_loader, test_loader = make_dataloaders(
@@ -96,12 +97,12 @@ def main(data_path: str, output_path: str, model_pick: ModelType, batch_size: in
     loss_function = torch.nn.CrossEntropyLoss()
 
     if enable_logging:
-        init_logging(f"{run_log_prefix} {model_name}", learning_rate, num_epochs, batch_size, model_pick, scale, model)
+        init_logging(f"{run_log_prefix} {model_type.name}", learning_rate, num_epochs, batch_size, model_pick, scale, model)
 
     t = time.strftime("%y%m%d_%H%M%S")
-    output_root = os.path.join(output_path, f'{run_log_prefix} {model_name}_{t}')
-    if not os.path.exists(output_root):
-        os.makedirs(output_root)
+    output_path = os.path.join(output_root, f'{run_log_prefix} {model_type.name}_{t}')
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
 
     best_loss_abs = sys.float_info.max
     best_model_state = model.state_dict().copy()
@@ -127,14 +128,12 @@ def main(data_path: str, output_path: str, model_pick: ModelType, batch_size: in
                     "net": best_model_state,
                 }
 
-                path = os.path.join(output_root, "best_model.pth")
+                path = os.path.join(output_path, f"{model_name}.pth")
                 torch.save(state, path)
 
                 progress_bar.set_description(f"Epoch {epoch} – Best AUC: {validation_metrics.auc.mean().item():.5} – Best ACC: {validation_metrics.acc:.5}")
 
-
-
-    model.state_dict = best_model_state
+    model = get_pretrained(model_pick, dataset_variant, scale, output_path)
 
     train_metrics = test(model, train_loader,  loss_function, device)
     validation_metrics = test(model, validation_loader, loss_function, device)
@@ -152,7 +151,7 @@ def main(data_path: str, output_path: str, model_pick: ModelType, batch_size: in
 
     log = f"{train_log}\n{validation_log}\n{test_log}\n"
     print(log)
-    with open(os.path.join(output_root, "log.txt"), "a") as f:
+    with open(os.path.join(output_path, "log.txt"), "a") as f:
         f.write(log)
 
 
