@@ -165,7 +165,7 @@ if __name__ == "__main__":
     parser.add_argument("--scale", default="1", type=float)
     parser.add_argument("--wandb_prefix", default=None, type=str, help="prefix for wandb project name. It may be whitespace in which case no prefix is used but it must be specified.")
     parser.add_argument("--no_logging", action="store_true", help="if set, no logging is done")
-    parser.add_argument("--masked", action="store_true", help="Use the masked dataset")
+    parser.add_argument("--dataset_variant", type=str, default="original", help="Variant of MNInSecT to use. Must be 'original', 'masked' or 'threshold'", required=True)
 
     args = parser.parse_args()
     data_path = args.data_path
@@ -174,8 +174,17 @@ if __name__ == "__main__":
     batch_size = args.batch_size
     num_epochs = args.num_epochs
     scale = DatasetScale.from_float(args.scale)
-    masked = args.masked
-    dataset_variant = MNInSecTVariant.Masked if masked else MNInSecTVariant.Original
+    dataset_variant = args.dataset_variant
+    
+    match dataset_variant:
+        case "original" | "Original" | "ORIGINAL" | "O" | "o":
+            dataset_variant = MNInSecTVariant.Original
+        case "masked" | "Masked" | "MASKED" | "M" | "m":
+            dataset_variant = MNInSecTVariant.Masked
+        case "threshold" | "Threshold" | "THRESHOLD" | "T" | "t":
+            dataset_variant = MNInSecTVariant.Threshold
+        case _:
+            raise ValueError(f"Unknown dataset variant: {dataset_variant}")
 
     model_type = ModelType[model_name]
 

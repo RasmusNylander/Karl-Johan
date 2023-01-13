@@ -56,6 +56,7 @@ class DatasetScale(Enum):
 class MNInSecTVariant(Enum):
     Original = auto()
     Masked = auto()
+    Threshold = auto()
 
 
 class Dataset(TorchDataset):
@@ -87,8 +88,13 @@ class Dataset(TorchDataset):
 
     @staticmethod
     def variant_folder_suffix(variant: MNInSecTVariant) -> str:
-        assert len(MNInSecTVariant) == 2, "Unhandled variant"
-        return "" if variant == MNInSecTVariant.Original else "_masked"
+        assert len(MNInSecTVariant) == 3, "Unhandled variant"
+        if variant == MNInSecTVariant.Original:
+            return ""
+        elif variant == MNInSecTVariant.Masked:
+            return "_masked"
+        elif variant == MNInSecTVariant.Threshold:
+            return "_threshold"
 
     @staticmethod
     def dataset_images(MNInSecT_root: str, type: DatasetType) -> list[str]:
