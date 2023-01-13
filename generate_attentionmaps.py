@@ -87,7 +87,7 @@ def generate_attention_maps(
         attention_map = attention_map.detach()[0].cpu()
         model_best.zero_grad()
         prediction_label = prediction[0].argmax(dim=0).item()
-        map_name = f"{dataset.label_to_name(prediction_label)}_prediction{'_correct' if prediction_label == correct_label else ''}"
+        map_name = f"{dataset.label_to_name(prediction_label)}_prediction"
         save_attention_map(attention_map, f"{image_dir}/{map_name}")
 
         for label, model in enumerate(models):
@@ -97,7 +97,7 @@ def generate_attention_maps(
             with torch.no_grad():
                 attention_map = model(image_batch)
                 attention_map = attention_map.detach()[0].cpu()
-                map_name = f"{dataset.label_to_name(label)}{'_correct' if label == correct_label else ''}"
+                map_name = f"{dataset.label_to_name(label)}"
                 save_attention_map(attention_map, f"{image_dir}/{map_name}")
                 model.zero_grad()
 
