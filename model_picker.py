@@ -24,11 +24,19 @@ def get_model(type: ModelType) -> torch.nn.Module:
 
 
 def get_model_name(type: ModelType, dataset_variant: MNInSecTVariant, scale: DatasetScale) -> str:
-    assert len(ModelType) == 4 and len(DatasetScale) == 3 and len(MNInSecTVariant) == 3
+    assert len(ModelType) == 4 and len(DatasetScale) == 3
 
-    scale_as_string = str(int(scale.to_float() * 100)).zfill(3)
+    scale_as_string = str(scale).zfill(3)
     scale_suffix = f"_{scale_as_string}"
-    variant_suffix = "_masked" if dataset_variant == MNInSecTVariant.Masked else ""
+
+    assert len(MNInSecTVariant) == 3
+    if dataset_variant == MNInSecTVariant.Original:
+        variant_suffix = ""
+    elif (dataset_variant == MNInSecTVariant.Masked):
+        variant_suffix = "_masked"
+    elif (dataset_variant == MNInSecTVariant.Threshold):
+        variant_suffix = "_threshold"
+
     return f"{type.name}{scale_suffix}{variant_suffix}"
 
 def get_pretrained(type: ModelType, dataset_variant: MNInSecTVariant, scale: DatasetScale, models_root: str, map_location=None) -> torch.nn.Module:
