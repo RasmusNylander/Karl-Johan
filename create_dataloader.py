@@ -64,6 +64,7 @@ class MNInSecTVariant:
     augmentation: Augmentation
     scale: DatasetScale
 
+    @property
     def base_name(self) -> str:
         assert len(DatasetScale) == 3, "Unhandled scale"
         if self.scale == DatasetScale.Scale25:
@@ -85,7 +86,7 @@ class MNInSecTVariant:
 
     @property
     def name(self) -> str:
-        return f"{self.base_name()}{self.augmentation_suffix}"
+        return f"{self.base_name}{self.augmentation_suffix}"
 
     def __str__(self):
         return self.name
