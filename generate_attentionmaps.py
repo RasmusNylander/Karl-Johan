@@ -122,6 +122,8 @@ if __name__ == "__main__":
                 dataset_variants.append(MNInSecTVariant.Original)
             case "masked" | "Masked" | "MASKED" | "M" | "m":
                 dataset_variants.append(MNInSecTVariant.Masked)
+            case "threshold" | "Threshold" | "THRESHOLD" | "T" | "t":
+                dataset_variants.append(MNInSecTVariant.Threshold)
             case _:
                 raise ValueError(f"Unknown dataset variant: {dataset_variant}")
 
