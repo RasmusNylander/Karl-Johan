@@ -1,17 +1,53 @@
 import itertools
 import os
 from dataclasses import dataclass
-from enum import Enum, auto
+from enum import Enum, IntEnum, auto
 
-import glob
 import torch
 import numpy as np
 import pandas as pd
-from skimage import io
+from tifffile import tifffile
 from torch import Tensor
 from torch.utils.data import Dataset as TorchDataset
 from torch.utils.data import DataLoader
 from torchvision.transforms import RandomRotation
+
+
+class Label(IntEnum):
+    Blowfly = 0,
+    CurlyWingedFly = 1,
+    Pupae = 2,
+    Maggot = 3,
+    BuffaloBeetleLarvae = 4,
+    Mealworm = 5,
+    SoliderFlyLarvae = 6,
+    Woodlice = 7,
+    BlackCricket = 8,
+    Grasshopper = 9,
+
+    @staticmethod
+    def abbreviation_dict():
+        assert len(Label) == 10
+        return {
+            Label.Blowfly: "BF",
+            Label.CurlyWingedFly: "CF",
+            Label.Pupae: "PP",
+            Label.Maggot: "MA",
+            Label.BuffaloBeetleLarvae: "BL",
+            Label.Mealworm: "ML",
+            Label.SoliderFlyLarvae: "SL",
+            Label.Woodlice: "WO",
+            Label.BlackCricket: "BC",
+            Label.Grasshopper: "GH",
+        }
+
+    @property
+    def abbreviation(self):
+        return self.abbreviation_dict()[self]
+
+    @staticmethod
+    def from_abbreviation(abbreviation: str):
+        return next(label for label, label_abbreviation in Label.abbreviation_dict().items() if label_abbreviation == abbreviation)
 
 
 class SplitType(Enum):
@@ -122,32 +158,29 @@ class Dataset(TorchDataset):
         if not os.path.exists(dataset_path):
             raise FileNotFoundError(f"Dataset not found at {dataset_path}")
 
-        self.image_paths = self.dataset_images(MNInSecT_root, type)
-
+        self.image_paths, self.image_labels = self.dataset_images(MNInSecT_root, type)
         self.image_paths = [os.path.join(dataset_path, path) for path in self.image_paths]
-        self.image_classes = [
-            os.path.split(d)[1] for d in glob.glob(dataset_path + "/*") if os.path.isdir(d)
-        ]
-        self.image_classes.sort()
-        self.name_to_label = {c: id for id, c in enumerate(self.image_classes)}
         self.rng = np.random.default_rng(seed=seed)
         self.as_rgb = as_rgb
         self.transforms = transforms
         self.rot = RandomRotation(180)
 
     @staticmethod
-    def dataset_images(MNInSecT_root: str, type: SplitType) -> list[str]:
+    def dataset_images(MNInSecT_root: str, type: SplitType) -> tuple[list[str], list[Label]]:
         assert len(SplitType) == 3
         file_name = "train" if type == SplitType.Train else "test" if type == SplitType.Test else "validation"
-        return pd.read_csv(f"{MNInSecT_root}/{file_name}.csv", names=["files"], header=0).files.tolist()
+        files = pd.read_csv(f"{MNInSecT_root}/{file_name}.csv", names=["files"], header=0).files
+        labels = [Label.from_abbreviation(abbreviation) for abbreviation in files.map(lambda x: x[:2]).to_list()]
+        return files.to_list(), labels
 
     def __len__(self) -> int:
         return len(self.image_paths)  # len(self.data)
 
     def __getitem__(self, idx) -> tuple[Tensor, Tensor]:
         image_path = self.image_paths[idx]
+        label = self.image_labels[idx]
 
-        image = io.imread(image_path)
+        image = tifffile.imread(image_path)
 
         image = np.expand_dims(image, 0)
         
@@ -157,30 +190,20 @@ class Dataset(TorchDataset):
         if self.as_rgb:
             size = X.shape
             X = X.expand([3, size[1], size[2], size[3]])
-        
 
-        c = os.path.split(os.path.split(image_path)[0])[1]
-        y = self.name_to_label[c]
-        temp = torch.zeros(len(self.image_classes))
-        temp[y] = 1
-        y = temp
+        y = label.value
+        one_hot_encoded = torch.zeros(self.num_classes())
+        one_hot_encoded[y] = 1
 
-        return X, y
+        return X, one_hot_encoded
 
-    def get_image_paths(self) -> list[str]:
-        return self.image_paths
+    @staticmethod
+    def num_classes() -> int:
+        return len(Label)
 
-    def get_image_classes(self) -> list[str]:
-        return self.image_classes
-
-    def get_name_to_label(self) -> dict[str, int]:
-        return self.name_to_label
-
-    def num_classes(self) -> int:
-        return len(self.image_classes)
-
-    def label_to_name(self, label: int) -> str:
-        return self.image_classes[label]
+    @staticmethod
+    def label_to_name(label: int) -> str:
+        return Label(label).abbreviation
 
     def get_name_of_image(self, idx: int) -> str:
         return self.image_paths[idx].split("/")[-1].split(".")[0]

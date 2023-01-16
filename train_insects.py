@@ -11,7 +11,7 @@ from torch.optim import Optimizer
 from torchmetrics.functional.classification import multiclass_auroc
 from tqdm import trange
 
-from create_dataloader import DatasetScale, Augmentation, MNInSecTVariant, make_dataloaders
+from create_dataloader import Dataset, DatasetScale, Augmentation, MNInSecTVariant, make_dataloaders
 from accuracy import accuracy
 import wandb
 from logging_wb import init_logging, log_test_result
@@ -47,7 +47,7 @@ class TestResult:
 
 
 def test(model, dataloader: DataLoader, loss_function: _Loss, device: Device) -> TestResult:
-    num_classes = len(dataloader.dataset.get_image_classes())
+    num_classes = dataloader.dataset.num_classes()
     model.eval()
     with torch.no_grad():
         num_batches: int = len(dataloader)
@@ -78,10 +78,6 @@ def main(data_path: str, output_root: str, model_pick: ModelType, dataset_varian
         as_rgb=False,
         variant=dataset_variant
     )
-        
-    num_classes = len(train_loader.dataset.get_image_classes())
-    name_to_label = train_loader.dataset.get_name_to_label()
-    label_to_name = {v: k for k, v in name_to_label.items()}
 
     learning_rate = 1e-3
     milestones = [0.1 * num_epochs, 0.8 * num_epochs]
@@ -104,7 +100,6 @@ def main(data_path: str, output_root: str, model_pick: ModelType, dataset_varian
         os.makedirs(output_path)
 
     best_loss_abs = sys.float_info.max
-    best_model_state = model.state_dict().copy()
     log_offset = 0
     with trange(num_epochs, unit="epoch", desc="Epoch 0 – Best AUC: 0 – Best ACC: 0") as progress_bar:
         for epoch in progress_bar:
