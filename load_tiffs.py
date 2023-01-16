@@ -2,7 +2,7 @@ from paraview.simple import *
 import os
 import glob
 
-TIFF_ROOT = "C:/Users/oisin/Documents/Uni/DTU/02507/repo/Karl-Johan"
+TIFF_ROOT = "/Karl-Johan"
 
 for source in GetSources().values():
     Delete(source)
