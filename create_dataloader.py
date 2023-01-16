@@ -93,6 +93,24 @@ class DatasetScale(Enum):
         elif self == DatasetScale.Scale100:
             return "100"
 
+    def next(self):
+        assert len(DatasetScale) == 3
+        if self == DatasetScale.Scale25:
+            return DatasetScale.Scale50
+        elif self == DatasetScale.Scale50:
+            return DatasetScale.Scale100
+        elif self == DatasetScale.Scale100:
+            return DatasetScale.Scale25
+
+    def previous(self):
+        assert len(DatasetScale) == 3
+        if self == DatasetScale.Scale25:
+            return DatasetScale.Scale100
+        elif self == DatasetScale.Scale50:
+            return DatasetScale.Scale25
+        elif self == DatasetScale.Scale100:
+            return DatasetScale.Scale50
+
 
 class Augmentation(Enum):
     Original = auto()
