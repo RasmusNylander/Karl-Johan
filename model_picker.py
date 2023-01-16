@@ -26,6 +26,28 @@ class ModelType(Enum):
             case _:
                 raise ValueError(f"Unknown model: {string}. Valid models are: {[model.name for model in ModelType]}")
 
+    def next(self):
+        assert len(ModelType) == 4
+        if self == ModelType.ResNet18:
+            return ModelType.ResNet50
+        elif self == ModelType.ResNet50:
+            return ModelType.DenseNet121
+        elif self == ModelType.DenseNet121:
+            return ModelType.SEResNet50
+        elif self == ModelType.SEResNet50:
+            return ModelType.ResNet18
+
+    def previous(self):
+        assert len(ModelType) == 4
+        if self == ModelType.ResNet18:
+            return ModelType.SEResNet50
+        elif self == ModelType.ResNet50:
+            return ModelType.ResNet18
+        elif self == ModelType.DenseNet121:
+            return ModelType.ResNet50
+        elif self == ModelType.SEResNet50:
+            return ModelType.DenseNet121
+
 def get_model(type: ModelType) -> torch.nn.Module:
     match type:
         case ModelType.ResNet18:
