@@ -1,13 +1,15 @@
 import glob
+from tqdm.contrib import itertools
+import os
 from dataclasses import dataclass
 
 import numpy as np
 import tifffile
 import torch
 import torch.nn.functional as F
-from monai.data.image_reader import nib
+from torch import Tensor
 
-from create_dataloader import Dataset, DatasetScale, MNInSecTVariant, SplitType, Augmentation
+from create_dataloader import Dataset, DatasetScale, Label, MNInSecTVariant, SplitType, Augmentation
 from model_picker import ModelType, get_model_name
 
 MODELS_ROOT = "./models"
@@ -19,43 +21,55 @@ assert BATCH_SIZE == 1
 model_type: ModelType = ModelType.SEResNet50
 scale: DatasetScale = DatasetScale.Scale50
 dataset_augmentation: Augmentation = Augmentation.Original
-layer = 4
+# layer = 3
 dataset_variant = MNInSecTVariant(dataset_augmentation, scale)
 
 
-def get_attention_map_and_bug(model_variant, layer: int, image_id: int, dataset: Dataset):
-    insect = dataset[image_id]
+@dataclass
+class AttentionMap:
+    model: ModelType
+    dataset: MNInSecTVariant
+    layer: int
+    image_name: str
+    label: Label
+
+    def fetch(self, root: str) -> Tensor:
+        attention_maps_path = os.path.join(root, get_model_name(self.model, self.dataset), f"layer{self.layer}", self.image_name, f"{self.label.abbreviation}*.tif")
+        attention_map_filename = glob.glob(attention_maps_path)[0]
+        attention_map = torch.from_numpy(tifffile.imread(attention_map_filename))
+        return attention_map
 
 
-model_string_id = get_model_name(model_type, dataset_variant)
+def combine_image(predicted_map: Tensor, image: Tensor):
+    predicted_map = F.interpolate(predicted_map.unsqueeze(dim=0).unsqueeze(dim=0), image.squeeze().shape)[0]
+    predicted_map = predicted_map[0]
+    predicted_map[predicted_map < 0.2] = 0
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-# device = torch.device("cpu")
-dataset: Dataset = Dataset(MNInSecT_root=DATA_PATH, type=SplitType.Test, seed=69420, as_rgb=False, dataset_variant=dataset_variant)
+    image = image / image.max()
+    image = image[0]
+    image[image < 0.1] = 0
 
-image, batch_labels = dataset[59]
-image_name = dataset.get_name_of_image(0)
+    # background = (attention_map == 0) & (image == 0)
+    opacity = torch.ones(image.shape)
+    # opacity[background] = 1
+    opacity[image != 0] -= 0.2
+    opacity[predicted_map != 0] -= 0.1
 
-attentionmap_paths = glob.glob(f"{ATTENTION_MAPS_ROOT}/{model_string_id}/layer{layer}/{image_name}/*")
-prediction_path = [path for path in attentionmap_paths if "prediction" in path][0]
-prediction_map = np.array(nib.load(prediction_path).dataobj).transpose(2, 0, 1)
-prediction_map = torch.from_numpy(prediction_map)
+    combined = torch.stack([image, predicted_map, torch.zeros(image.shape), opacity], dim=-1).numpy()
+    combined_as_uint8 = (combined * 255).astype(np.uint8)
+    return combined_as_uint8
 
-attention_map = F.interpolate(prediction_map.unsqueeze(dim=0).unsqueeze(dim=0), image.squeeze().shape)[0]
-attention_map = attention_map[0]
-attention_map[attention_map < 0.2] = 0
 
-image = image / image.max()
-image = image[0]
-image[image < 0.1] = 0
 
-background = (attention_map == 0) & (image == 0)
-opacity = torch.zeros(image.shape)
-opacity[background] = 1
-opacity[image != 0] += 0.8
-opacity[attention_map != 0] += 0.9
+dataset: Dataset = Dataset(MNInSecT_root=DATA_PATH, type=SplitType.Test, seed=69420, as_rgb=False, variant=dataset_variant)
 
-combined = torch.stack([image, attention_map, torch.zeros(image.shape), opacity], dim=-1).numpy()
-combined_as_uint8 = (combined * 255).astype(np.uint8)
+for layer, image_id in itertools.product(range(1, 5), range(len(dataset))):
+    image_name = dataset.get_name_of_image(image_id)
+    for label in Label:
+        attention_map = AttentionMap(model_type, dataset_variant, layer, image_name, label)
+        attention_map_data = attention_map.fetch(ATTENTION_MAPS_ROOT)
+        insect_image = dataset[image_id][0]
 
-tifffile.imwrite(f"temp_image.tif", combined_as_uint8)
+        path = os.path.join("combined", image_name, f"{layer}")
+        os.makedirs(path, exist_ok=True)
+        tifffile.imwrite(f"{path}/{label.abbreviation}.tif", combine_image(attention_map_data, insect_image))
