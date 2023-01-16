@@ -112,6 +112,25 @@ class Augmentation(Enum):
             case _:
                 raise ValueError(f"Unknown augmentation: {string}")
 
+    def next(self):
+        assert len(Augmentation) == 3
+        if self == Augmentation.Original:
+            return Augmentation.Masked
+        elif self == Augmentation.Masked:
+            return Augmentation.Threshold
+        elif self == Augmentation.Threshold:
+            return Augmentation.Original
+
+    def previous(self):
+        assert len(Augmentation) == 3
+        if self == Augmentation.Original:
+            return Augmentation.Threshold
+        elif self == Augmentation.Masked:
+            return Augmentation.Original
+        elif self == Augmentation.Threshold:
+            return Augmentation.Masked
+
+
 class MNInSecTVariantMeta(type):
     def __iter__(cls):
         iterator = itertools.product(Augmentation, DatasetScale)
