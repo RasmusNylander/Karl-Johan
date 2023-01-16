@@ -4,6 +4,7 @@ import glob
 
 TIFF_ROOT = "/Karl-Johan"
 
+ResetSession()
 file_names = glob.glob(f"{TIFF_ROOT}/*.tif")
 for file_name in file_names:
     reader = TIFFReader(FileName=file_name)
@@ -16,4 +17,5 @@ for file_name in file_names:
 
 HideAll()
 Show(reader)
+ResetCamera()
 Render()
