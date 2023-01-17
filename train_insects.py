@@ -169,8 +169,8 @@ if __name__ == "__main__":
     num_epochs = args.num_epochs
 
     dataset_variant = MNInSecTVariant(
-        DatasetScale.from_float(args.scale),
-        Augmentation.parse_from_string(args.dataset_variant)
+        Augmentation.parse_from_string(args.dataset_variant),
+        DatasetScale.from_float(args.scale)
     )
 
     enable_logging = not args.no_logging
