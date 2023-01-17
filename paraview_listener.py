@@ -60,6 +60,7 @@ class Command(IntEnum):
     PreviousModel = 7,
     NextAugmentation = 8,
     PreviousAugmentation = 9,
+    RandomImage = 10,
 
     @staticmethod
     def from_int(i: int) -> "Command":
@@ -76,6 +77,7 @@ class Configuration:
         self.dataset = Dataset(MNInSecT_root=DATA_PATH, type=SplitType.Test, seed=69420, variant=self.dataset_variant)
 
     def parse_input(self, input: bytes) -> bool:
+        assert len(Command) == 11
         command = Command.from_int(input[0])
         match command:
             case Command.NextImage:
@@ -106,6 +108,8 @@ class Configuration:
             case Command.PreviousAugmentation:
                 self.dataset_variant = MNInSecTVariant(self.dataset_variant.augmentation.previous(), self.dataset_variant.scale)
                 self.dataset = Dataset(MNInSecT_root=DATA_PATH, type=SplitType.Test, seed=69420, variant=self.dataset_variant)
+            case Command.RandomImage:
+                self.image_id = np.random.randint(0, len(self.dataset))
         return True
 
 
