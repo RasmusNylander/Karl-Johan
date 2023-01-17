@@ -20,11 +20,11 @@ client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect(('localhost', 12345))
 client_socket.send(b"\x10")
 
-for source in GetSources().values():
-    Delete(source)
-
 bytes = client_socket.recv(10)
 if bytes != b"No change":
+    for source in GetSources().values():
+        Delete(source)
+
     file_names = [f"{TIFF_ROOT}{f}" for f in os.listdir(TIFF_ROOT) if f.endswith(".tif")]
     reader = read_volume(file_names[0])
 
