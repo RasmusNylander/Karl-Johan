@@ -14,16 +14,16 @@ from torchvision.transforms import RandomRotation
 
 
 class Label(IntEnum):
-    Blowfly = 0,
-    CurlyWingedFly = 1,
-    Pupae = 2,
-    Maggot = 3,
-    BuffaloBeetleLarvae = 4,
-    Mealworm = 5,
-    SoliderFlyLarvae = 6,
-    Woodlice = 7,
-    BlackCricket = 8,
-    Grasshopper = 9,
+    Blowfly = 1,
+    CurlyWingedFly = 3,
+    Pupae = 7,
+    Maggot = 5,
+    BuffaloBeetleLarvae = 2,
+    Mealworm = 6,
+    SoliderFlyLarvae = 8,
+    Woodlice = 9,
+    BlackCricket = 0,
+    Grasshopper = 4,
 
     @staticmethod
     def abbreviation_dict():
