@@ -2,11 +2,11 @@ import os
 import socket
 from paraview.simple import *
 
-TIFF_ROOT = "C:/Users/Nylan/projekter/Karl-Johan/combined"
+TIFF_ROOT = "C:/Users/Nylan/projekter/Karl-Johan/combined/"
 
 def read_volume(path):
     reader = TIFFReader(FileName=path)
-    RenameSource(path.split()[1], reader)
+    RenameSource(path.split(TIFF_ROOT)[1], reader)
 
     disp = GetDisplayProperties()
     disp.Representation = "Volume"

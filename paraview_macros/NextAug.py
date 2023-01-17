@@ -2,11 +2,11 @@ import os
 import socket
 from paraview.simple import *
 
-TIFF_ROOT = "C:/Users/Nylan/projekter/Karl-Johan/combined"
+TIFF_ROOT = "C:/Users/Nylan/projekter/Karl-Johan/combined/"
 
 def read_volume(path):
     reader = TIFFReader(FileName=path)
-    RenameSource(path.split()[1], reader)
+    RenameSource(path.split(TIFF_ROOT)[1], reader)
 
     disp = GetDisplayProperties()
     disp.Representation = "Volume"
@@ -25,7 +25,7 @@ for source in GetSources().values():
 
 bytes = client_socket.recv(10)
 if bytes != b"No change":
-    file_names = [f"{TIFF_ROOT}/{f}" for f in os.listdir(TIFF_ROOT) if f.endswith(".tif")]
+    file_names = [f"{TIFF_ROOT}{f}" for f in os.listdir(TIFF_ROOT) if f.endswith(".tif")]
     reader = read_volume(file_names[0])
 
     for file_name in file_names[1:]:
