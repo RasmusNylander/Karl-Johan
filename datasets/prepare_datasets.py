@@ -2,6 +2,7 @@ import os
 import glob
 import shutil
 import zipfile
+import argparse
 import numpy as np
 from tqdm import tqdm
 from skimage import io
@@ -13,6 +14,9 @@ from joblib import Parallel, delayed
 
 def remove_first_directory(path: str):
     return os.path.join(*path.split(os.path.sep)[2:])
+
+def remove_first_directory_windows(path: str):
+    return os.path.join(*path.split(os.path.sep)[1:])
 
 def create_mask(im,intensity_threshold,iteration):
     h,_,_ = ndi.center_of_mass(im)
@@ -58,17 +62,24 @@ def move_wrongly_labelled_images(data_path):
     for i,file in enumerate(cf):
         os.rename(f"{data_path}/CF/{file}",f"{data_path}/CF/cf_{i:03}_downscaled.tif")
         
-def create_masked_images():
+def create_masked_images(windows=False):
     files = glob.glob("MNInSecT_new/256x128x128/**/*.tif")
     for file in tqdm(files):
         im = io.imread(file)
         mask = create_mask(im, 100, 0)
         im[mask == 0] = 0
-        new_path = os.path.join("MNInSecT_new/256x128x128_masked", remove_first_directory(file))
-        imwrite(new_path, im)
-        im[im < 25] = 0
-        new_path = os.path.join("MNInSecT_new/256x128x128_threshold", remove_first_directory(file))
-        imwrite(new_path, im)
+        if windows:
+            new_path = os.path.join("MNInSecT_new/256x128x128_masked", remove_first_directory_windows(file))
+            imwrite(new_path, im)
+            im[im < 25] = 0
+            new_path = os.path.join("MNInSecT_new/256x128x128_threshold", remove_first_directory_windows(file))
+            imwrite(new_path, im)
+        else:
+            new_path = os.path.join("MNInSecT_new/256x128x128_masked", remove_first_directory(file))
+            imwrite(new_path, im)
+            im[im < 25] = 0
+            new_path = os.path.join("MNInSecT_new/256x128x128_threshold", remove_first_directory(file))
+            imwrite(new_path, im)
         
 def scale_and_save_image(image_path, scales, scale_names):
     image = io.imread(image_path)
@@ -87,6 +98,13 @@ def scale_and_save_image(image_path, scales, scale_names):
         imwrite(new_path, scaled_image)
         
 if __name__=="__main__":
+    parser = argparse.ArgumentParser(description="RUN model on insect data")
+    parser.add_argument("--windows", action="store_true", help="fix for windows file system")
+
+
+    args = parser.parse_args()
+
+
     #Extract files
     with zipfile.ZipFile("sorted_downscaled.zip", 'r') as zip_ref:
         zip_ref.extractall("MNInSecT_new/")
@@ -111,7 +129,7 @@ if __name__=="__main__":
     
     #Creates and saves masked images
     print("\nCreating masked images\n")
-    create_masked_images()
+    create_masked_images(windows=args.windows)
     
     #Scales both original and masked images
     original_prefix = "256x128x128"
