@@ -84,6 +84,14 @@ class Configuration:
         self.images_to_see = [0, 1, 2, 17, 18, 19, 47, 48, 49, 62, 63, 64, 84, 85, 86, 87, 88, 94, 95, 96, 99, 100, 101, 121, 122]
         self.next_jump: int = 0
 
+    def update_scale(self, scale: DatasetScale):
+        self.dataset_variant = MNInSecTVariant(augmentation=self.dataset_variant.augmentation, scale=scale)
+        self.dataset = Dataset(MNInSecT_root=DATA_PATH, type=SplitType.Test, seed=69420, variant=self.dataset_variant)
+
+    def update_augmentation(self, augmentation: Augmentation):
+        self.dataset_variant = MNInSecTVariant(augmentation=augmentation, scale=self.dataset_variant.scale)
+        self.dataset = Dataset(MNInSecT_root=DATA_PATH, type=SplitType.Test, seed=69420, variant=self.dataset_variant)
+
     def parse_input(self, input: bytes) -> bool:
         assert len(Command) == 17
         command = Command.from_int(input[0])
@@ -101,34 +109,30 @@ class Configuration:
                 if self.layer <= 0:
                     self.layer = 4
             case Command.NextScale:
-                self.dataset_variant = MNInSecTVariant(self.dataset_variant.augmentation, self.dataset_variant.scale.next())
-                self.dataset = Dataset(MNInSecT_root=DATA_PATH, type=SplitType.Test, seed=69420, variant=self.dataset_variant)
+                self.update_scale(self.dataset_variant.scale.next())
             case Command.PreviousScale:
-                self.dataset_variant = MNInSecTVariant(self.dataset_variant.augmentation, self.dataset_variant.scale.previous())
-                self.dataset = Dataset(MNInSecT_root=DATA_PATH, type=SplitType.Test, seed=69420, variant=self.dataset_variant)
+                self.update_scale(self.dataset_variant.scale.previous())
             case Command.NextModel:
                 self.model_type = self.model_type.next()
             case Command.PreviousModel:
                 self.model_type = self.model_type.previous()
             case Command.NextAugmentation:
-                self.dataset_variant = MNInSecTVariant(self.dataset_variant.augmentation.next(), self.dataset_variant.scale)
-                self.dataset = Dataset(MNInSecT_root=DATA_PATH, type=SplitType.Test, seed=69420, variant=self.dataset_variant)
+                self.update_augmentation(self.dataset_variant.augmentation.next())
             case Command.PreviousAugmentation:
-                self.dataset_variant = MNInSecTVariant(self.dataset_variant.augmentation.previous(), self.dataset_variant.scale)
-                self.dataset = Dataset(MNInSecT_root=DATA_PATH, type=SplitType.Test, seed=69420, variant=self.dataset_variant)
+                self.update_augmentation(self.dataset_variant.augmentation.previous())
             case Command.RandomImage:
                 self.image_id = np.random.randint(0, len(self.dataset))
             case Command.NextInspection:
-                self.dataset_variant.scale = self.dataset_variant.scale.next()
+                self.update_scale(self.dataset_variant.scale.next())
                 if self.dataset_variant.scale == DatasetScale.Scale25:
-                    self.dataset_variant.augmentation = self.dataset_variant.augmentation.next()
+                    self.update_augmentation(self.dataset_variant.augmentation.next())
                     if self.dataset_variant.augmentation == Augmentation.Original:
                         self.image_id = self.images_to_see[self.next_jump]
                         self.next_jump += 1
             case Command.PreviousInspection:
-                self.dataset_variant.scale = self.dataset_variant.scale.previous()
+                self.update_scale(self.dataset_variant.scale.previous())
                 if self.dataset_variant.scale == DatasetScale.Scale100:
-                    self.dataset_variant.augmentation = self.dataset_variant.augmentation.previous()
+                    self.update_augmentation(self.dataset_variant.augmentation.previous())
                     if self.dataset_variant.augmentation == Augmentation.Threshold:
                         self.next_jump -= 1
                         self.image_id = self.images_to_see[self.next_jump]
