@@ -9,7 +9,7 @@ from tifffile import tifffile
 from torch import Tensor
 from torch.nn import functional as F
 
-from create_dataloader import Dataset, Label, MNInSecTVariant, SplitType
+from create_dataloader import Augmentation, Dataset, DatasetScale, Label, MNInSecTVariant, SplitType
 from model_picker import ModelType, get_model_name
 
 MODELS_ROOT = "./models"
@@ -61,6 +61,12 @@ class Command(IntEnum):
     NextAugmentation = 8,
     PreviousAugmentation = 9,
     RandomImage = 10,
+    NextInspection = 11,
+    PreviousInspection = 12,
+    Layer1 = 13,
+    Layer2 = 14,
+    Layer3 = 15,
+    Layer4 = 16,
 
     @staticmethod
     def from_int(i: int) -> "Command":
@@ -75,9 +81,11 @@ class Configuration:
         self.image_id = image_id
 
         self.dataset = Dataset(MNInSecT_root=DATA_PATH, type=SplitType.Test, seed=69420, variant=self.dataset_variant)
+        self.images_to_see = [0, 1, 2, 17, 18, 19, 47, 48, 49, 62, 63, 64, 84, 85, 86, 87, 88, 94, 95, 96, 99, 100, 101, 121, 122]
+        self.next_jump: int = 0
 
     def parse_input(self, input: bytes) -> bool:
-        assert len(Command) == 11
+        assert len(Command) == 17
         command = Command.from_int(input[0])
         match command:
             case Command.NextImage:
@@ -110,6 +118,36 @@ class Configuration:
                 self.dataset = Dataset(MNInSecT_root=DATA_PATH, type=SplitType.Test, seed=69420, variant=self.dataset_variant)
             case Command.RandomImage:
                 self.image_id = np.random.randint(0, len(self.dataset))
+            case Command.NextInspection:
+                self.dataset_variant.scale = self.dataset_variant.scale.next()
+                if self.dataset_variant.scale == DatasetScale.Scale25:
+                    self.dataset_variant.augmentation = self.dataset_variant.augmentation.next()
+                    if self.dataset_variant.augmentation == Augmentation.Original:
+                        self.image_id = self.images_to_see[self.next_jump]
+                        self.next_jump += 1
+            case Command.PreviousInspection:
+                self.dataset_variant.scale = self.dataset_variant.scale.previous()
+                if self.dataset_variant.scale == DatasetScale.Scale100:
+                    self.dataset_variant.augmentation = self.dataset_variant.augmentation.previous()
+                    if self.dataset_variant.augmentation == Augmentation.Threshold:
+                        self.next_jump -= 1
+                        self.image_id = self.images_to_see[self.next_jump]
+            case Command.Layer1:
+                if self.layer == 1:
+                    return False
+                self.layer = 1
+            case Command.Layer2:
+                if self.layer == 2:
+                    return False
+                self.layer = 2
+            case Command.Layer3:
+                if self.layer == 3:
+                    return False
+                self.layer = 3
+            case Command.Layer4:
+                if self.layer == 4:
+                    return False
+                self.layer = 4
         return True
 
 
@@ -138,6 +176,7 @@ while True:
 
         true_label_path = os.path.join(ATTENTION_MAPS_ROOT, model_name, f"layer{config.layer}", image_name,
                                        f"{true_label.abbreviation}*.tif")
+        print(true_label_path)
         true_map_filename = glob.glob(true_label_path)[0]
         true_map = torch.from_numpy(tifffile.imread(true_map_filename))
 
