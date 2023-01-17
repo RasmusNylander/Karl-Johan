@@ -6,6 +6,7 @@ TIFF_ROOT = "C:/Users/Nylan/projekter/Karl-Johan/combined"
 
 def read_volume(path):
     reader = TIFFReader(FileName=path)
+    RenameSource(path.split()[1], reader)
 
     disp = GetDisplayProperties()
     disp.Representation = "Volume"
