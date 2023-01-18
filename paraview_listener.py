@@ -1,4 +1,5 @@
 import glob
+import itertools
 import os
 import socket
 from enum import IntEnum
@@ -154,7 +155,7 @@ class Configuration:
                 self.layer = 4
             case Command.NextIncorrect:
                 model_name = get_model_name(self.model_type, self.dataset_variant)
-                for i in range(self.image_id + 1, len(self.dataset)):
+                for i in itertools.chain(range(self.image_id + 1, len(self.dataset), range(0, self.image_id))):
                     image_name = self.dataset.get_name_of_image(i)
                     print(image_name)
                     true_label = Label.from_abbreviation(image_name[:2])
@@ -164,16 +165,6 @@ class Configuration:
                     if prediction_label != true_label:
                         self.image_id = i
                         return True
-                for i in range(0, self.image_id):
-                    image_name = self.dataset.get_name_of_image(config.image_id)
-                    true_label = Label.from_abbreviation(image_name[:2])
-                    prediction_label_path = os.path.join(ATTENTION_MAPS_ROOT, model_name, f"layer{self.layer}", image_name, "*prediction*.tif")
-                    prediction_map_filename = glob.glob(prediction_label_path)[0]
-                    prediction_label = Label.from_abbreviation(os.path.split(prediction_map_filename)[-1][:2])
-                    if prediction_label != true_label:
-                        self.image_id = i
-                        return True
-
         return True
 
 
