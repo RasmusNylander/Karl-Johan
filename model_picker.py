@@ -57,9 +57,9 @@ class ModelType(Enum):
                 return ResNet(block="bottleneck", layers=[3, 4, 6, 3], block_inplanes=[32, 64, 128, 256],
                               num_classes=10, n_input_channels=1)
             case ModelType.DenseNet121:
-                return densenet121(spatial_dims=2, in_channels=1, out_channels=10)
+                return densenet121(spatial_dims=3, in_channels=1, out_channels=10)
             case ModelType.SEResNet50:
-                return SEResNet50(spatial_dims=2, in_channels=1, out_channels=10)
+                return SEResNet50(spatial_dims=3, in_channels=1, out_channels=10)
 
 
 
