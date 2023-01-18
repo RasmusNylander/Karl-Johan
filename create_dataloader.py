@@ -47,7 +47,7 @@ class Label(IntEnum):
 
     @staticmethod
     def from_abbreviation(abbreviation: str):
-        return next(label for label, label_abbreviation in Label.abbreviation_dict().items() if label_abbreviation == abbreviation)
+        return next(label for label, label_abbreviation in Label.abbreviation_dict().items() if label_abbreviation == abbreviation.upper())
 
 
 class SplitType(Enum):

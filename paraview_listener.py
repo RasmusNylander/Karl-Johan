@@ -66,6 +66,7 @@ class Command(IntEnum):
     Layer2 = 14,
     Layer3 = 15,
     Layer4 = 16,
+    NextIncorrect = 17,
 
     @staticmethod
     def from_int(i: int) -> "Command":
@@ -92,7 +93,7 @@ class Configuration:
         self.dataset = Dataset(MNInSecT_root=DATA_PATH, type=SplitType.Test, seed=69420, variant=self.dataset_variant)
 
     def parse_input(self, input: bytes) -> bool:
-        assert len(Command) == 17
+        assert len(Command) == 18
         command = Command.from_int(input[0])
         match command:
             case Command.NextImage:
@@ -151,6 +152,28 @@ class Configuration:
                 if self.layer == 4:
                     return False
                 self.layer = 4
+            case Command.NextIncorrect:
+                model_name = get_model_name(self.model_type, self.dataset_variant)
+                for i in range(self.image_id + 1, len(self.dataset)):
+                    image_name = self.dataset.get_name_of_image(i)
+                    print(image_name)
+                    true_label = Label.from_abbreviation(image_name[:2])
+                    prediction_label_path = os.path.join(ATTENTION_MAPS_ROOT, model_name, f"layer{self.layer}", image_name, "*prediction*.tif")
+                    prediction_map_filename = glob.glob(prediction_label_path)[0]
+                    prediction_label = Label.from_abbreviation(os.path.split(prediction_map_filename)[-1][:2])
+                    if prediction_label != true_label:
+                        self.image_id = i
+                        return True
+                for i in range(0, self.image_id):
+                    image_name = self.dataset.get_name_of_image(config.image_id)
+                    true_label = Label.from_abbreviation(image_name[:2])
+                    prediction_label_path = os.path.join(ATTENTION_MAPS_ROOT, model_name, f"layer{self.layer}", image_name, "*prediction*.tif")
+                    prediction_map_filename = glob.glob(prediction_label_path)[0]
+                    prediction_label = Label.from_abbreviation(os.path.split(prediction_map_filename)[-1][:2])
+                    if prediction_label != true_label:
+                        self.image_id = i
+                        return True
+
         return True
 
 
