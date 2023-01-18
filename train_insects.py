@@ -15,7 +15,7 @@ from create_dataloader import Dataset, DatasetScale, Augmentation, MNInSecTVaria
 from accuracy import accuracy
 import wandb
 from logging_wb import init_logging, log_test_result
-from model_picker import ModelType, get_model, get_model_name, get_pretrained
+from model_picker import ModelType, get_model_name, get_pretrained
 
 
 def train_one_epoch(model, dataloader: DataLoader, loss_function: _Loss, optimizer: Optimizer, device: Device) -> float:
@@ -83,7 +83,7 @@ def main(data_path: str, output_root: str, model_pick: ModelType, dataset_varian
     milestones = [0.1 * num_epochs, 0.8 * num_epochs]
     gamma = 0.1
 
-    model = get_model(model_pick).to(device)
+    model = model_pick.create().to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.01)
     scheduler = torch.optim.lr_scheduler.MultiStepLR(

@@ -57,9 +57,9 @@ class SplitType(Enum):
 
 
 class DatasetScale(Enum):
-    Scale25 = auto()
-    Scale50 = auto()
-    Scale100 = auto()
+    Scale25 = auto(), "25"
+    Scale50 = auto(), "50"
+    Scale100 = auto(), "100"
 
     def to_float(self) -> float:
         assert len(DatasetScale) == 3

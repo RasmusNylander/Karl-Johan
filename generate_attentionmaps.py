@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from create_dataloader import Dataset, DatasetScale, Augmentation, MNInSecTVariant, make_dataloaders
 from medcam import medcam
-from model_picker import ModelType, get_model, get_pretrained, get_model_name
+from model_picker import ModelType, get_pretrained, get_model_name
 
 BATCH_SIZE = 1
 assert BATCH_SIZE == 1

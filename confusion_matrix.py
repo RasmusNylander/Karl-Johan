@@ -3,7 +3,7 @@ from tqdm.contrib import itertools
 
 
 from create_dataloader import DatasetScale, Augmentation, MNInSecTVariant, make_dataloaders
-from model_picker import ModelType, get_model, get_model_name, get_pretrained
+from model_picker import ModelType, get_model_name, get_pretrained
 from torchmetrics import ConfusionMatrix
 import numpy as np
 import tqdm

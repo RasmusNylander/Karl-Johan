@@ -48,16 +48,19 @@ class ModelType(Enum):
         elif self == ModelType.SEResNet50:
             return ModelType.DenseNet121
 
-def get_model(type: ModelType) -> torch.nn.Module:
-    match type:
-        case ModelType.ResNet18:
-            return ResNet(block="basic", layers=[2, 2, 2, 2], block_inplanes=[32,64,128,256], num_classes=10, n_input_channels=1)
-        case ModelType.ResNet50:
-            return ResNet(block="bottleneck", layers=[3, 4, 6, 3], block_inplanes=[32,64,128,256], num_classes=10, n_input_channels=1)
-        case ModelType.DenseNet121:
-            return densenet121(spatial_dims=3, in_channels=1, out_channels=10)
-        case ModelType.SEResNet50:
-            return SEResNet50(spatial_dims=3, in_channels=1, num_classes=10)
+    def create(self) -> torch.nn.Module:
+        match self:
+            case ModelType.ResNet18:
+                return ResNet(block="basic", layers=[2, 2, 2, 2], block_inplanes=[32, 64, 128, 256],
+                              num_classes=10, n_input_channels=1)
+            case ModelType.ResNet50:
+                return ResNet(block="bottleneck", layers=[3, 4, 6, 3], block_inplanes=[32, 64, 128, 256],
+                              num_classes=10, n_input_channels=1)
+            case ModelType.DenseNet121:
+                return densenet121(spatial_dims=2, in_channels=1, out_channels=10)
+            case ModelType.SEResNet50:
+                return SEResNet50(spatial_dims=2, in_channels=1, out_channels=10)
+
 
 
 def get_model_name(type: ModelType, variant: MNInSecTVariant) -> str:
@@ -68,6 +71,6 @@ def get_model_name(type: ModelType, variant: MNInSecTVariant) -> str:
 def get_pretrained(type: ModelType, variant: MNInSecTVariant, models_root: str, map_location=None) -> torch.nn.Module:
     name = get_model_name(type, variant)
     model_path = f"{models_root}/{name}.pth"
-    model = get_model(type)
+    model = type.create()
     model.load_state_dict(torch.load(model_path, map_location=map_location)['net'], strict=True)
     return model
