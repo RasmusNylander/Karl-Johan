@@ -24,7 +24,7 @@ def Save():
     filename = filename[:-4]
     print(filename)
 
-    SaveScreenshot(f"{IMAGE_ROOT}/{filename[:6]}{filename}.png")
+    SaveScreenshot(f"{IMAGE_ROOT}{filename[:6]}/{filename}.png")
 
 
 def Next():
