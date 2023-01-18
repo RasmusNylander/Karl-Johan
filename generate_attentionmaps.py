@@ -82,11 +82,10 @@ def generate_attention_maps(
 
         image_batch = image_batch.to(device)
 
-        correct_label = batch_labels[0].argmax(dim=0).item()
         prediction, attention_map = model_best(image_batch)
         attention_map = attention_map.detach()[0].cpu()
         model_best.zero_grad()
-        prediction_label = prediction[0].argmax(dim=0).item()
+        prediction_label = prediction[0].argmax(dim=1).item()
         map_name = f"{dataset.label_to_name(prediction_label)}_prediction"
         save_attention_map(attention_map, f"{image_dir}/{map_name}")
 
