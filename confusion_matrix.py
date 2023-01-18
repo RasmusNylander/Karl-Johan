@@ -7,6 +7,8 @@ from model_picker import ModelType, get_model_name, get_pretrained
 from torchmetrics import ConfusionMatrix
 import numpy as np
 import tqdm
+import os
+import glob
 
 def create_confusion(model, data_loader):
     images_processed = 0
@@ -23,7 +25,7 @@ def create_confusion(model, data_loader):
     
     confmat = ConfusionMatrix(task="multiclass", num_classes=10)
     cm = confmat(predictions, targets)
-    return cm
+    return cm, targets, predictions
             
 
 
@@ -46,6 +48,17 @@ if __name__=="__main__":
             variant=dataset_variant
         )
 
-        confmat = create_confusion(model, test_loader)
-
+        confmat,targets,predictions = create_confusion(model, test_loader)
+        
+        path_to_attentionmaps = [f"attention_maps/{model_name}/layer1/{os.path.split(p)[-1][:-4]}/" for p in test_loader.dataset.image_paths]
+        
+        for pred, path in zip(predictions,path_to_attentionmaps):
+            pred_class = test_loader.dataset.label_to_name(pred.item())
+            prev_pred = os.path.split(glob.glob(f'{path}*_prediction.tif')[0])[-1]
+            
+            if pred_class not in prev_pred:
+                os.rename(f'{path}{pred_class}.tif',f'{path}{pred_class}_prediction.tif')
+                os.rename(f'{path}{prev_pred}',f'{path}{pred_class[:-15]}.tif')
+                
+        
         np.save(f"confusion_matrix/{model_name}", confmat.numpy())
