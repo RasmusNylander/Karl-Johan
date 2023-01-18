@@ -59,7 +59,7 @@ class ModelType(Enum):
             case ModelType.DenseNet121:
                 return densenet121(spatial_dims=3, in_channels=1, out_channels=10)
             case ModelType.SEResNet50:
-                return SEResNet50(spatial_dims=3, in_channels=1, out_channels=10)
+                return SEResNet50(spatial_dims=3, in_channels=1, num_classes=10)
 
 
 
