@@ -46,6 +46,7 @@ def layer_to_layer_name(model: ModelType, layer: int) -> str:
 
 def generate_attention_maps(
         model_type: ModelType,
+        model_dataset_variant: MNInSecTVariant | None,
         dataset_variant: MNInSecTVariant,
         models_root: str,
         data_path: str,
@@ -53,21 +54,26 @@ def generate_attention_maps(
         layer: int,
         leave_progress_bar=True
 ):
-    model_string_id = get_model_name(model_type, dataset_variant)
+    if model_dataset_variant is None:
+        model_dataset_variant = dataset_variant
+    model_string_id = get_model_name(model_type, model_dataset_variant)
 
     _, _, test_loader = make_dataloaders(num_workers=0, persistent_workers=False, data_path=data_path,
                                          batch_size=BATCH_SIZE, pin_memory=False, variant=dataset_variant)
 
     dataset: Dataset = test_loader.dataset
 
-    model = get_pretrained(model_type, dataset_variant, models_root).to(device)
+    model = get_pretrained(model_type, model_dataset_variant, models_root).to(device)
     model.eval()
 
     layer_name = layer_to_layer_name(model_type, layer)
     models = create_injected_models(model, dataset.num_classes(), layer_name)
     model_best = models.pop(0)
 
-    image_output_root = f"attention_maps/{model_string_id}/layer{layer}"
+    if model_dataset_variant == dataset_variant:
+        image_output_root = f"attention_maps/{model_string_id}/layer{layer}"
+    else:
+        image_output_root = f"attention_maps/{model_string_id}_{dataset_variant.name}/layer{layer}"
     assert BATCH_SIZE == 1
     for image_id, (image_batch, batch_labels) in enumerate(tqdm(test_loader, unit="image", leave=leave_progress_bar, desc=f"{model_string_id}, layer {layer}")):
         image_name = dataset.get_name_of_image(image_id)
@@ -105,7 +111,8 @@ if __name__ == "__main__":
     parser.add_argument("--scales", type=float, nargs="+", help='Scale of the images. Must be 0.25, 0.5 or 1.0')
     parser.add_argument("--layers", type=int, nargs="+", help='Layer to use for attention maps.')
     parser.add_argument("--cpu", action="store_true", help="Force using CPU")
-    parser.add_argument("--dataset_variants", type=str, nargs="+", default="original", help="Variant of MNInSecT to use. Must be 'original' or 'masked'", required=True)
+    parser.add_argument("--model_dataset_augmentations", type=str, default="same")
+    parser.add_argument("--dataset_augmentations", type=str, nargs="+", default="original")
 
     args = parser.parse_args()
     data_path: str = args.data_path
@@ -113,7 +120,7 @@ if __name__ == "__main__":
     output_path: str = args.output_path
     device = torch.device("cpu" if args.cpu or not torch.cuda.is_available() else "cuda:0")
 
-    dataset_augmentations = [Augmentation.parse_from_string(string) for string in args.dataset_variants]
+    dataset_augmentations = [Augmentation.parse_from_string(string) for string in args.dataset_augmentations]
     scales = [DatasetScale.from_float(scale) for scale in args.scales]
     dataset_variants = [
         MNInSecTVariant(augmentation, scale) for augmentation, scale in product(dataset_augmentations, scales)
@@ -121,9 +128,15 @@ if __name__ == "__main__":
 
     model_types = [ModelType.parse_from_string(model) for model in args.models]
 
+    if args.model_dataset_augmentations == "same":
+        model_dataset_augmentations = None
+    else:
+        model_dataset_augmentations = Augmentation.parse_from_string(args.model_dataset_augmentations)
+
     layers: list[int] = args.layers
     for layer in layers:
         assert layer in [1, 2, 3, 4], f"Layer {layer} not yet supported. Layer must be either 1, 2, 3 or 4"
 
     for model_type, dataset_variant, layer in itertools.product(model_types, dataset_variants, layers, desc="Generating attention maps", unit="model"):
-        generate_attention_maps(model_type, dataset_variant, models_root, data_path, device, layer, False)
+        model_dataset_variant = MNInSecTVariant(model_dataset_augmentations, dataset_variant.scale) if model_dataset_augmentations is not None else None
+        generate_attention_maps(model_type, model_dataset_variant, dataset_variant, models_root, data_path, device, layer, False)
