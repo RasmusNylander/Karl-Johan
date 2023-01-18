@@ -26,7 +26,6 @@ def combine_image(image: Tensor, true_map: Tensor, predicted_map: Tensor):
     true_map[true_map < 0.2] = 0
 
     predicted_map = scale_image(predicted_map, image.squeeze().shape)
-    predicted_map = true_map
     predicted_map[predicted_map < 0.2] = 0
 
     image = image / image.max()
