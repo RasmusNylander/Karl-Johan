@@ -155,7 +155,7 @@ class Configuration:
                 self.layer = 4
             case Command.NextIncorrect:
                 model_name = get_model_name(self.model_type, self.dataset_variant)
-                for i in itertools.chain(range(self.image_id + 1, len(self.dataset), range(0, self.image_id))):
+                for i in itertools.chain(range(self.image_id + 1, len(self.dataset)), range(0, self.image_id)):
                     image_name = self.dataset.get_name_of_image(i)
                     print(image_name)
                     true_label = Label.from_abbreviation(image_name[:2])
